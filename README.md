@@ -7,7 +7,7 @@ A webapp based trading card game maker for CS461
 
 A sample JSON file demonstrating two turns of a stock game used to prototype match flow and card logic.
 
-**Path:** `/public/data/gameflow.json`
+**Path:** `web/public/gameflow.json`
 
 This file outlines:
 - Basic card types (creature and object)
