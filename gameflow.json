@@ -1,0 +1,63 @@
+{
+  "match_id": "stock_game_001",
+  "players": ["player_1", "AI_1"],
+  "board": {
+    "player_1": [
+      {"card_id": "creature_f01", "type": "creature", "hp": 5, "range": "short", "element": "fire"},
+      {"card_id": "creature_w01", "type": "creature", "hp": 4, "range": "mid", "element": "water"},
+      {"card_id": "object_bomb01", "type": "object", "effect": "damage_random_enemy"}
+    ],
+    "AI_1": [
+      {"card_id": "creature_e01", "type": "creature", "hp": 5, "range": "short", "element": "earth"},
+      {"card_id": "creature_a01", "type": "creature", "hp": 4, "range": "long", "element": "air"},
+      {"card_id": "object_swap01", "type": "object", "effect": "swap_enemy_positions"}
+    ]
+  },
+  "hands": {
+    "player_1": ["creature_f02", "creature_w02", "object_heal01", "creature_e02", "object_shuffle01"],
+    "AI_1": ["creature_a02", "creature_f03", "object_burn01", "creature_w03", "object_block01"]
+  },
+  "turns": [
+    {
+      "turn_number": 1,
+      "player": "player_1",
+      "actions": [
+        {"action": "draw", "card_id": "creature_f02"},
+        {"action": "play", "card_id": "creature_f01", "phase": "main", "position": {"row": 0, "col": 0}},
+        {"action": "play", "card_id": "object_bomb01", "phase": "main", "target": "creature_e01"},
+        {"action": "combat", "card_id": "creature_f01", "target": "creature_e01"}
+      ]
+    },
+    {
+      "turn_number": 1,
+      "player": "AI_1",
+      "actions": [
+        {"action": "draw", "card_id": "creature_a02"},
+        {"action": "play", "card_id": "creature_e01", "phase": "main", "position": {"row": 0, "col": 0}},
+        {"action": "combat", "card_id": "creature_e01", "target": "creature_f01"}
+      ]
+    },
+    {
+      "turn_number": 2,
+      "player": "player_1",
+      "actions": [
+        {"action": "draw", "card_id": "object_heal01"},
+        {"action": "play", "card_id": "creature_w01", "phase": "main", "position": {"row": 0, "col": 1}},
+        {"action": "combat", "card_id": "creature_w01", "target": "creature_a01"}
+      ]
+    },
+    {
+      "turn_number": 2,
+      "player": "AI_1",
+      "actions": [
+        {"action": "draw", "card_id": "object_burn01"},
+        {"action": "play", "card_id": "creature_a01", "phase": "main", "position": {"row": 0, "col": 1}},
+        {"action": "combat", "card_id": "creature_a01", "target": "creature_w01"}
+      ]
+    }
+  ],
+  "result": {
+    "winner": "player_1",
+    "turns_played": 2
+  }
+}
