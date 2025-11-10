@@ -1,24 +1,36 @@
 import { cookies } from "next/headers";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 
-export async function createClient() {
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+/** safe for server components */
+export async function supabaseServerReadOnly() {
     const cookieStore = await cookies(); 
-
-    return createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                get(name: string) {
-                    return cookieStore.get(name)?.value;
-                },
-                set(name: string, value: string, options: CookieOptions) {
-                    cookieStore.set({ name, value, ...options });
-                },
-                remove(name: string, options: CookieOptions) {
-                    cookieStore.set({ name, value: "", ...options });
-                },
-            },
-        }
-    );
+    return createServerClient(url, anon, {
+        cookies: {
+            get: (name: string) => cookieStore.get(name)?.value,
+            set: () => { },
+            remove: () => { },
+        },
+    });
 }
+
+/** use ONLY in server actions / rroute hndlers (can write cookies), seems to be working now */
+export async function supabaseServerMutable() {
+    const cookieStore = await cookies(); 
+    return createServerClient(url, anon, {
+        cookies: {
+            get: (name: string) => cookieStore.get(name)?.value,
+            set: (name: string, value: string, options: any) => {
+                cookieStore.set({ name, value, ...options });
+            },
+            remove: (name: string, options: any) => {
+                cookieStore.set({ name, value: "", ...options });
+            },
+        },
+    });
+}
+
+export const createClient = supabaseServerReadOnly;
+export default createClient;

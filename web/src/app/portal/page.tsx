@@ -1,21 +1,27 @@
-export default function Portal() {
+import { createClient } from "@/lib/supabase/server";
+
+export default async function Portal() {
+    const supa = await createClient();
+    const { data: games } = await supa
+        .from("games")
+        .select("id,title,description,created_at")
+        .eq("status", "published")
+        .order("created_at", { ascending: false });
+
     return (
         <main className="mx-auto max-w-4xl p-6">
-            <h1 className="text-2xl font-semibold">Portal: Demo Game</h1>
-            <p className="mt-2 text-base text-gray-700">
-                This is a placeholder portal listing.
-            </p>
-
-            <a
-                href="/playtest"
-                className="mt-4 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2
-                   text-white text-base font-medium shadow-sm
-                   hover:bg-blue-700 focus-visible:outline-none
-                   focus-visible:ring-2 focus-visible:ring-amber-500
-                   focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-            >
-                Playtest vs AI
-            </a>
+            <h1 className="text-2xl font-semibold">Portal</h1>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                {(games ?? []).map(g => (
+                    <li key={g.id} className="rounded border p-4">
+                        <div className="font-medium">{g.title}</div>
+                        <p className="text-sm text-gray-700 line-clamp-2">{g.description}</p>
+                    </li>
+                ))}
+            </ul>
+            <div className="mt-6 text-sm">
+                <a className="underline" href="/studio/games">My Studio</a>
+            </div>
         </main>
     );
 }
