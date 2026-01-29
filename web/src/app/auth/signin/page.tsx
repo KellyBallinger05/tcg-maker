@@ -3,6 +3,21 @@
 import { useMemo, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 
+/**
+ * read ?next= from the URL so middleware can send users back to the page they tried to access
+ * only allow internal paths (avoid open redirect shenanigans)
+ */
+function getSafeNext() {
+    const sp = new URLSearchParams(window.location.search);
+    const next = sp.get("next");
+
+    // match callback safety rules
+    if (next && next.startsWith("/") && !next.startsWith("//")) return next;
+
+    // default landing page after login
+    return "/studio/games";
+}
+
 export default function SignIn() {
     const supa = useMemo(() => supabaseBrowser(), []);
     const [loading, setLoading] = useState<"magic" | "github" | null>(null);
@@ -15,13 +30,14 @@ export default function SignIn() {
 
         setLoading("magic");
 
+        const next = getSafeNext();
+
+        // preserve where the user was trying to go (middleware sets ?next=...)
+        const redirectUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+
         const { error } = await supa.auth.signInWithOtp({
             email: email.trim(),
-            options: {
-                emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-                    "/studio/games"
-                )}`,
-            },
+            options: { emailRedirectTo: redirectUrl },
         });
 
         setLoading(null);
@@ -42,13 +58,14 @@ export default function SignIn() {
         if (loading) return;
         setLoading("github");
 
+        const next = getSafeNext();
+
+        // same idea as magic link: don't hardcode /studio/games, send them back to intended page
+        const redirectUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+
         const { error } = await supa.auth.signInWithOAuth({
             provider: "github",
-            options: {
-                redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-                    "/studio/games"
-                )}`,
-            },
+            options: { redirectTo: redirectUrl },
         });
 
         // if successful, it will redirect away and never reach here
