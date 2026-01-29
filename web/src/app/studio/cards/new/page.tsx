@@ -10,11 +10,12 @@ export async function createCard(formData: FormData) {
 
     const { data: auth } = await supa.auth.getUser();
     const userId = auth.user?.id;
-    if (!userId) {
-        redirect("/auth/signin");
-    }
 
     const game_id = String(formData.get("game_id") || "");
+    if (!userId) {
+        redirect(`/signin?next=/studio/cards/new${game_id ? `?gameId=${encodeURIComponent(game_id)}` : ""}`);
+    }
+
     const name = String(formData.get("name") || "").trim();
     const type = String(formData.get("type") || "").trim() || "unit";
     const cost = Number(formData.get("cost") || 0) || 0;
@@ -26,7 +27,7 @@ export async function createCard(formData: FormData) {
         throw new Error("Game and Name are required.");
     }
 
-    // image upload finally working with supabase
+    // image upload (supabase storage)
     let image_url: string | null = null;
     const maybeFile = formData.get("image");
     const file = maybeFile instanceof File ? maybeFile : null;
@@ -42,17 +43,16 @@ export async function createCard(formData: FormData) {
                 upsert: false,
             });
 
-        if (upErr) {
-            throw new Error(`Upload failed: ${upErr.message}`);
-        }
+        if (upErr) throw new Error(`Upload failed: ${upErr.message}`);
 
         const { data: pub } = supa.storage.from("card-images").getPublicUrl(key);
         image_url = pub?.publicUrl ?? null;
     }
 
-    // insert into cards
+    // IMPORTANT: created_by must be set for cards RLS
     const { error: dbErr } = await supa.from("cards").insert({
         game_id,
+        created_by: userId,
         name,
         type,
         cost,
@@ -62,41 +62,58 @@ export async function createCard(formData: FormData) {
         image_url,
     });
 
-    if (dbErr) {
-        throw new Error(`DB insert failed: ${dbErr.message}`);
-    }
+    if (dbErr) throw new Error(`DB insert failed: ${dbErr.message}`);
 
-    // refresh list and go back to index
-    revalidatePath("/studio/cards");
-    redirect("/studio/cards");
+    // refresh relevant pages + go back to the game's cards list
+    revalidatePath(`/studio/games/${game_id}/cards`);
+    revalidatePath("/studio/games");
+    redirect(`/studio/games/${game_id}/cards`);
 }
 
 /** server comp */
-export default async function NewCardPage() {
-    const supa = await createClient();
+export default async function NewCardPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ gameId?: string }>;
+}) {
+    const { gameId } = await searchParams;
 
-    const { data: { user } } = await supa.auth.getUser();
+    const supa = await createClient();
+    const {
+        data: { user },
+    } = await supa.auth.getUser();
+
     if (!user) {
-        return <main className="p-6">Sign in first.</main>;
+        redirect(`/signin?next=/studio/cards/new${gameId ? `?gameId=${encodeURIComponent(gameId)}` : ""}`);
     }
 
-    // load games for the dropdown
+    // load games for dropdown (RLS will scope to owner)
     const { data: games, error } = await supa
         .from("games")
         .select("id,title")
         .order("title", { ascending: true });
 
+    if (error) {
+        return <main className="p-6">Failed to load games.</main>;
+    }
+
     const safeGames = games ?? [];
+    const defaultGameId =
+        gameId && safeGames.some((g) => g.id === gameId) ? gameId : "";
 
     return (
-        <main className="space-y-6">
+        <main className="mx-auto max-w-xl p-6 space-y-6">
             <h1 className="text-2xl font-semibold">New Card</h1>
 
-            {/* do NOT set encType/method when action is a server function, for some reason throws an error even though online examples show this convention */}
             <form action={createCard} className="space-y-4">
                 <label className="block">
                     <span className="text-sm font-medium">Game</span>
-                    <select name="game_id" required className="mt-1 w-full rounded border p-2" defaultValue="">
+                    <select
+                        name="game_id"
+                        required
+                        className="mt-1 w-full rounded border p-2"
+                        defaultValue={defaultGameId}
+                    >
                         <option value="" disabled>
                             Choose a game…
                         </option>
@@ -106,6 +123,11 @@ export default async function NewCardPage() {
                             </option>
                         ))}
                     </select>
+                    {gameId && !defaultGameId && (
+                        <p className="mt-1 text-sm text-red-600">
+                            That gameId isn’t available to your account (or doesn’t exist).
+                        </p>
+                    )}
                 </label>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
