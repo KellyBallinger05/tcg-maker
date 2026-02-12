@@ -41,51 +41,51 @@ export default function Card({ card, detailsHref }: CardProps) {
               className="relative mx-auto h-full w-full object-contain z-20"
               loading="lazy"
             />
-            {/* stats overlay */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 z-30">
-              <div className="flex justify-between items-end text-white">
-                <div className="flex gap-3">
-                  {/* cost */}
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs stat-label">Cost</span>
-                    <span className="text-lg font-bold stat-outline">{card.cost || 0}</span>
-                  </div>
-                  {/* attack */}
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs stat-label">ATK</span>
-                    <span className="text-lg font-bold stat-outline">{card.attack || 0}</span>
-                  </div>
-                  {/* defense */}
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs stat-label">DEF</span>
-                    <span className="text-lg font-bold stat-outline">{card.defense || 0}</span>
-                  </div>
-                </div>
-                {/* type badge */}
-                {(() => {
-                  const t = (card.type || 'unit').toString().toLowerCase();
-                  const badgeClass =
-                    t === 'unit'
-                      ? 'bg-green-600 text-white'
-                      : t === 'spell'
-                      ? 'bg-purple-600 text-white'
-                      : t === 'equipment'
-                      ? 'bg-yellow-600 text-black'
-                      : 'bg-white/20 text-black dark:text-white';
-                  return (
-                    <span className={`px-2 py-1 rounded text-xs uppercase tracking-wider ${badgeClass}`}>
-                      {t}
-                    </span>
-                  );
-                })()}
-              </div>
-            </div>
           </>
         ) : (
           <div className="grid h-full w-full place-items-center card-no-image relative z-20">
             No image
           </div>
         )}
+        {/* stats overlay */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 z-30">
+          <div className="flex justify-between items-end text-white">
+            <div className="flex gap-3">
+              {/* cost */}
+              <div className="flex flex-col items-center">
+                <span className="text-xs stat-label">Cost</span>
+                <span className="text-lg font-bold stat-outline">{card.cost || 0}</span>
+              </div>
+              {/* attack */}
+              <div className="flex flex-col items-center">
+                <span className="text-xs stat-label">ATK</span>
+                <span className="text-lg font-bold stat-outline">{card.attack || 0}</span>
+              </div>
+              {/* defense */}
+              <div className="flex flex-col items-center">
+                <span className="text-xs stat-label">DEF</span>
+                <span className="text-lg font-bold stat-outline">{card.defense || 0}</span>
+              </div>
+            </div>
+            {/* type badge */}
+            {(() => {
+              const t = (card.type || 'unit').toString().toLowerCase();
+              const badgeClass =
+                t === 'unit'
+                  ? 'bg-green-600 text-white'
+                  : t === 'spell'
+                  ? 'bg-purple-600 text-white'
+                  : t === 'equipment'
+                  ? 'bg-yellow-600 text-black'
+                  : 'bg-white/20 text-black dark:text-white';
+              return (
+                <span className={`px-2 py-1 rounded text-xs uppercase tracking-wider ${badgeClass}`}>
+                  {t}
+                </span>
+              );
+            })()}
+          </div>
+        </div>
       </div>
 
       <div className="p-3">

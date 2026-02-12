@@ -77,12 +77,6 @@ export default async function GamesList() {
                                     >
                                         Open
                                     </Link>
-                                    <Link
-                                        className="rounded border border-gray-300 shadow-sm px-3 py-1 text-sm hover:bg-gray-50 transition"
-                                        href={`/studio/games/${g.id}/cards`}
-                                    >
-                                        Cards
-                                    </Link>
                                 </div>
                             </div>
                         </li>
