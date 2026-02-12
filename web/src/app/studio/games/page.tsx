@@ -37,8 +37,11 @@ export default async function GamesList() {
         <main className="mx-auto max-w-2xl p-6">
             <div className="flex items-baseline justify-between">
                 <h1 className="text-2xl font-semibold">My Games</h1>
-                <Link className="underline" href="/studio/games/new">
-                    + Create Game
+                <Link
+                    href="/studio/games/new"
+                    className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition"
+                >
+                    + New Game
                 </Link>
             </div>
 
@@ -58,7 +61,7 @@ export default async function GamesList() {
             ) : (
                 <ul className="mt-4 space-y-2">
                     {list.map((g) => (
-                        <li key={g.id} className="rounded border p-3">
+                        <li key={g.id} className="rounded border border-gray-300 p-3 shadow-sm" style={{ boxShadow: '0 2px 8px 0 rgba(120,120,130,0.10), 0 1px 2px 0 rgba(120,120,130,0.08)' }}>
                             <div className="flex items-start justify-between gap-3">
                                 <div>
                                     <div className="font-medium">{g.title}</div>
@@ -69,13 +72,13 @@ export default async function GamesList() {
 
                                 <div className="flex gap-2">
                                     <Link
-                                        className="rounded border px-3 py-1 text-sm hover:bg-gray-50"
+                                        className="rounded border border-gray-300 shadow-sm px-3 py-1 text-sm hover:bg-gray-50 transition"
                                         href={`/studio/games/${g.id}/cards`}
                                     >
                                         Open
                                     </Link>
                                     <Link
-                                        className="rounded border px-3 py-1 text-sm hover:bg-gray-50"
+                                        className="rounded border border-gray-300 shadow-sm px-3 py-1 text-sm hover:bg-gray-50 transition"
                                         href={`/studio/games/${g.id}/cards`}
                                     >
                                         Cards

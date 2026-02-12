@@ -9,7 +9,7 @@ export default async function TopNav() {
     } = await supa.auth.getUser();
 
     return (
-        <header className="border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+        <header className="border-b border-gray-300 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
             <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
                 <div className="flex items-center gap-3">
                     <Link href="/" className="font-semibold tracking-tight">
@@ -20,11 +20,11 @@ export default async function TopNav() {
                         <Link href="/portal" className="hover:underline">
                             Portal
                         </Link>
-                        <span className="text-gray-300">|</span>
+                        <span aria-hidden="true" className="text-gray-300 select-none">|</span>
                         <Link href="/playtest" className="hover:underline">
                             Playtest
                         </Link>
-                        <span className="text-gray-300">|</span>
+                        <span aria-hidden="true" className="text-gray-300 select-none">|</span>
                         <Link href="/studio/games" className="hover:underline">
                             My Games
                         </Link>

@@ -1,5 +1,8 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 @import "tailwindcss";
 
+/* Root color and font variables */
 :root {
   --bg: #ffffff;
   --fg: #111827;
@@ -8,30 +11,80 @@
   --border: #e5e7eb;
   --primary: #2563eb;
   --primary-fg: #ffffff;
+  --card-no-image-color: rgba(107, 107, 107, 0.817);
+  --image-shadow-light: rgba(0,0,0,0.06);
+  --image-shadow-mid: rgba(0,0,0,0.12);
+  --image-shadow-dark: rgba(0,0,0,0.28);
 }
 
+/* Theme variables for Tailwind (if used) */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-open-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+/* Dark mode overrides */
 @media (prefers-color-scheme: dark) {
   :root {
+    --font-sans: "Open Sans", sans-serif;
     --background: #0a0a0a;
     --foreground: #ededed;
   }
+  .card-image-wrapper::after {
+    background: linear-gradient(to top, var(--image-shadow-dark) 0%, var(--image-shadow-mid) 40%, transparent 80%);
+  }
 }
 
+/* Base typography and background */
 html,
 body {
   background: var(--bg);
   color: var(--fg);
+  font-family: var(--font-sans);
 }
 
+/* Focus ring for accessibility */
 a:focus,
 button:focus {
   outline: 3px solid #f59e0b;
   outline-offset: 2px;
+}
+
+/* Card image container and overlays */
+.card-image-wrapper::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 5rem;
+  pointer-events: none;
+  opacity: 0.95;
+  filter: blur(6px);
+  background: linear-gradient(to top, var(--image-shadow-mid) 0%, var(--image-shadow-light) 40%, transparent 80%);
+  z-index: 5;
+}
+.card-image-wrapper img {
+  position: relative;
+  z-index: 10;
+}
+.card-image-ratio {
+  aspect-ratio: 63 / 72;
+}
+
+/* Card stat text and labels */
+.stat-outline {
+  -webkit-text-stroke: 1px #000;
+}
+.stat-label {
+  color: inherit;
+  font-weight: bolder;
+  -webkit-text-stroke: 0.75px #000;
+}
+
+/* Placeholder text for cards with no image */
+.card-no-image {
+  color: var(--card-no-image-color);
 }

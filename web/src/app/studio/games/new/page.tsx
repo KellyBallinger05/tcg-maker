@@ -39,17 +39,17 @@ export default async function NewGame() {
             <form action={createGame} className="space-y-3">
                 <label className="block">
                     <span className="text-sm font-medium">Title</span>
-                    <input name="title" required className="mt-1 w-full rounded border p-2" />
+                    <input name="title" required className="mt-1 w-full rounded border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-blue-100 p-2 transition" />
                 </label>
 
                 <label className="block">
                     <span className="text-sm font-medium">Description</span>
-                    <textarea name="description" rows={3} className="mt-1 w-full rounded border p-2" />
+                    <textarea name="description" rows={3} className="mt-1 w-full rounded border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-blue-100 p-2 transition" />
                 </label>
 
                 <label className="block">
                     <span className="text-sm font-medium">Status</span>
-                    <select name="status" className="mt-1 w-full rounded border p-2" defaultValue="draft">
+                    <select name="status" className="mt-1 w-full rounded border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-blue-100 p-2 transition" defaultValue="draft">
                         <option value="draft">Draft</option>
                         <option value="published">Published</option>
                     </select>
