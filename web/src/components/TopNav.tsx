@@ -26,16 +26,13 @@ export default async function TopNav() {
                         </Link>
                         <span aria-hidden="true" className="text-gray-300 select-none">|</span>
                         <Link href="/studio/games" className="hover:underline">
-                            My Games
+                            Games
                         </Link>
-                        <Link href="/studio/games/new" className="hover:underline">
-                            New Game
+                        <Link href="/studio/decks" className="hover:underline">
+                            Decks
                         </Link>
                         <Link href="/studio/cards" className="hover:underline">
-                            My Cards
-                        </Link>
-                        <Link href="/studio/cards/new" className="hover:underline">
-                            New Card
+                            Cards
                         </Link>
                     </div>
                 </div>
