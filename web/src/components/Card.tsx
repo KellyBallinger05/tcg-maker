@@ -114,7 +114,7 @@ export default function Card({ card, detailsHref }: CardProps) {
         {card.game_id && (
           <div className="mt-3 text-xs text-gray-500">
             Game:{" "}
-            <Link className="underline" href={`/studio/games/${card.game_id}`}>
+            <Link className="underline" href={`/studio/games/${card.game_id}/cards`}>
               {card.game_id}
             </Link>
           </div>
