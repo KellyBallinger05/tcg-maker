@@ -30,9 +30,11 @@ export function applyAction(state: MatchState, action: GameAction): MatchState {
         const cardInstance: CardInstance = {
           instanceId: `${action.cardId}_${Date.now()}`,
           definitionId: action.cardId,
-          currentHealth: 1, // Placeholder: you can pull actual health from card definition
+          currentHealth: 1, // Placeholder: can pull actual health from definition
           hasAttacked: false,
+          type: CardType.CREATURE, // Added type for win condition
         };
+
         if (!activePlayer.battlefield[action.slotIndex]) {
           activePlayer.hand = activePlayer.hand.filter((id) => id !== action.cardId);
           activePlayer.battlefield[action.slotIndex] = cardInstance.instanceId;
@@ -44,8 +46,16 @@ export function applyAction(state: MatchState, action: GameAction): MatchState {
 
     case "PLAY_OBJECT":
       if (activePlayer.hand.includes(action.cardId)) {
+        const cardInstance: CardInstance = {
+          instanceId: `${action.cardId}_${Date.now()}`,
+          definitionId: action.cardId,
+          hasAttacked: false,
+          type: CardType.OBJECT, // Added type
+        };
+
         activePlayer.hand = activePlayer.hand.filter((id) => id !== action.cardId);
         activePlayer.discard.push(action.cardId);
+        newState.cardInstances[cardInstance.instanceId] = cardInstance;
         // Implement object effect here if needed
       }
       break;
@@ -53,30 +63,37 @@ export function applyAction(state: MatchState, action: GameAction): MatchState {
     case "DECLARE_ATTACK":
       const attackerId = activePlayer.battlefield[action.attackerSlot];
       if (!attackerId) break;
+
       const attacker = newState.cardInstances[attackerId];
       if (attacker.hasAttacked) break;
+
+      // ✅ Mark attacker as having attacked BEFORE any possible deletion
+      attacker.hasAttacked = true;
 
       const defenderId = opponent.battlefield[action.targetSlot];
       if (defenderId) {
         const defender = newState.cardInstances[defenderId];
-        // Deal damage simultaneously (both creatures)
-        defender.currentHealth! -= 1; // Placeholder: use attacker.attack from definition
-        attacker.currentHealth! -= 1; // Placeholder: use defender.attack from definition
 
+        // Deal damage (placeholder logic)
+        defender.currentHealth! -= 1;
+        attacker.currentHealth! -= 1;
+
+        // Remove defender if dead
         if (defender.currentHealth! <= 0) {
           opponent.battlefield[action.targetSlot] = null;
           opponent.discard.push(defender.definitionId);
           delete newState.cardInstances[defenderId];
         }
+
+        // Remove attacker if dead
         if (attacker.currentHealth! <= 0) {
           activePlayer.battlefield[action.attackerSlot] = null;
           activePlayer.discard.push(attacker.definitionId);
           delete newState.cardInstances[attackerId];
         }
       } else {
-        // Attack empty slot → could implement direct pressure or ignored
+        // Attack empty slot → could implement direct damage or ignore
       }
-      attacker.hasAttacked = true;
       break;
 
     case "END_PHASE":
