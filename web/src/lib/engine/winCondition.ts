@@ -3,25 +3,22 @@ import { MatchState, PlayerState, CardType, CardInstance } from "./types";
 /**
  * Check if a single player has any Creature cards left
  */
-function hasCreatures(player: PlayerState, cardInstances: Record<string, CardInstance>): boolean {
-  // Check battlefield for creatures
-  const battlefieldHasCreature = player.battlefield.some(
-    (id) => id !== null && cardInstances[id].definitionId && cardInstances[id]
+function hasCreatures(
+  player: PlayerState,
+  cardInstances: Record<string, CardInstance>
+): boolean {
+  // Helper to check if a card instance is a creature
+  const isCreature = (id: string) => {
+    const card = cardInstances[id];
+    return card && card.type === CardType.CREATURE;
+  };
+
+  // Check battlefield, hand, and deck for creatures
+  return (
+    player.battlefield.some((id) => id !== null && isCreature(id)) ||
+    player.hand.some(isCreature) ||
+    player.deck.some(isCreature)
   );
-
-  // Check hand for creature cards
-  const handHasCreature = player.hand.some((id) => {
-    const card = cardInstances[id] || { definitionId: id, type: CardType.CREATURE }; // placeholder
-    return card.type === CardType.CREATURE;
-  });
-
-  // Check deck for creature cards
-  const deckHasCreature = player.deck.some((id) => {
-    const card = cardInstances[id] || { definitionId: id, type: CardType.CREATURE }; // placeholder
-    return card.type === CardType.CREATURE;
-  });
-
-  return battlefieldHasCreature || handHasCreature || deckHasCreature;
 }
 
 /**
