@@ -37,6 +37,9 @@ export default async function TopNav() {
                         <Link href="/studio/cards/new" className="hover:underline">
                             New Card
                         </Link>
+                        <Link href="/studio/decks" className="hover:underline">
+                            Decks
+                        </Link>
                     </div>
                 </div>
 
