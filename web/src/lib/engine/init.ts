@@ -29,14 +29,19 @@ export function createMatch(
 
   const startingPlayer = rand() < 0.5 ? "P1" : "P2";
 
-  const basePlayer = (id: string, deck: string[]): PlayerState => ({
+ const basePlayer = (id: string, deck: string[]): PlayerState => {
+  const openingHand = deck.slice(0, 5);
+  const remainingDeck = deck.slice(5);
+
+  return {
     id,
-    deck,
-    hand: deck.slice(0, 5),
+    deck: remainingDeck,
+    hand: openingHand,
     battlefield: [null, null, null, null, null],
     discard: [],
     resources: { current: 0, max: 0 },
-  });
+  };
+};
 
   return {
     version: "Alpha_Fixed_v0.1",
