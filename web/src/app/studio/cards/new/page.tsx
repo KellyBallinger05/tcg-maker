@@ -111,7 +111,7 @@ export default async function NewCardPage({
                     <select
                         name="game_id"
                         required
-                        className="mt-1 w-full rounded border p-2"
+                        className="mt-1 w-full rounded border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-blue-100 p-2 transition"
                         defaultValue={defaultGameId}
                     >
                         <option value="" disabled>
@@ -133,12 +133,12 @@ export default async function NewCardPage({
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <label className="block">
                         <span className="text-sm font-medium">Name</span>
-                        <input name="name" required className="mt-1 w-full rounded border p-2" />
+                        <input name="name" required className="mt-1 w-full rounded border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-blue-100 p-2 transition" />
                     </label>
 
                     <label className="block">
                         <span className="text-sm font-medium">Type</span>
-                        <select name="type" className="mt-1 w-full rounded border p-2" defaultValue="unit">
+                        <select name="type" className="mt-1 w-full rounded border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-blue-100 p-2 transition" defaultValue="unit">
                             <option value="unit">Unit</option>
                             <option value="spell">Spell</option>
                             <option value="item">Item</option>
@@ -147,23 +147,23 @@ export default async function NewCardPage({
 
                     <label className="block">
                         <span className="text-sm font-medium">Cost</span>
-                        <input type="number" name="cost" min={0} defaultValue={0} className="mt-1 w-full rounded border p-2" />
+                        <input type="number" name="cost" min={0} defaultValue={0} className="mt-1 w-full rounded border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-blue-100 p-2 transition" />
                     </label>
 
                     <label className="block">
                         <span className="text-sm font-medium">Attack</span>
-                        <input type="number" name="attack" min={0} defaultValue={0} className="mt-1 w-full rounded border p-2" />
+                        <input type="number" name="attack" min={0} defaultValue={0} className="mt-1 w-full rounded border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-blue-100 p-2 transition" />
                     </label>
 
                     <label className="block">
                         <span className="text-sm font-medium">Defense</span>
-                        <input type="number" name="defense" min={0} defaultValue={0} className="mt-1 w-full rounded border p-2" />
+                        <input type="number" name="defense" min={0} defaultValue={0} className="mt-1 w-full rounded border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-blue-100 p-2 transition" />
                     </label>
                 </div>
 
                 <label className="block">
                     <span className="text-sm font-medium">Rules / Description</span>
-                    <textarea name="rules_text" rows={4} className="mt-1 w-full rounded border p-2" />
+                    <textarea name="rules_text" rows={4} className="mt-1 w-full rounded border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-blue-100 p-2 transition" />
                 </label>
 
                 <label className="block">
