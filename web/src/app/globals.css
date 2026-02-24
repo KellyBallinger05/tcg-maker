@@ -1,5 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 @import "tailwindcss";
-
+/* Root color and font variables */
 :root {
   --bg: #ffffff;
   --fg: #111827;
@@ -7,31 +8,123 @@
   --surface: #f9fafb;
   --border: #e5e7eb;
   --primary: #2563eb;
+  --background: var(--bg);
+  --foreground: var(--fg);
+  --font-open-sans: 'Open Sans', sans-serif;
+  --font-geist-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Helvetica Neue', monospace;
   --primary-fg: #ffffff;
-}
-
-@theme inline {
-  --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-open-sans);
   --font-mono: var(--font-geist-mono);
 }
-
+/* Dark mode overrides */
 @media (prefers-color-scheme: dark) {
   :root {
+    --font-sans: "Open Sans", sans-serif;
     --background: #0a0a0a;
     --foreground: #ededed;
   }
+  .card-image-wrapper::after {
+    background: linear-gradient(to top, var(--image-shadow-dark) 0%, var(--image-shadow-mid) 40%, transparent 80%);
+  }
 }
-
+/* Base typography and background */
 html,
 body {
   background: var(--bg);
   color: var(--fg);
+  font-family: var(--font-sans);
 }
-
+/* Focus ring for accessibility */
 a:focus,
 button:focus {
   outline: 3px solid #f59e0b;
   outline-offset: 2px;
+}
+/* Card image container and overlays */
+.card-image-wrapper::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 5rem;
+  pointer-events: none;
+  opacity: 0.95;
+  filter: blur(6px);
+  background: linear-gradient(to top, var(--image-shadow-mid) 0%, var(--image-shadow-light) 40%, transparent 80%);
+  z-index: 5;
+}
+.card-image-wrapper img {
+  position: relative;
+  z-index: 10;
+}
+.card-image-ratio {
+  aspect-ratio: 63 / 72;
+}
+/* Card stat text and labels */
+.stat-outline {
+  -webkit-text-stroke: 1px #000;
+}
+.stat-label {
+  color: inherit;
+  font-weight: bolder;
+  -webkit-text-stroke: 0.75px #000;
+}
+/* Placeholder text for cards with no image */
+.card-no-image {
+  color: var(--card-no-image-color);
+}
+/* PLAYTEST PAGE BUTTONS*/
+.game-controls {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.game-button {
+  padding: 8px 16px;
+  border: 2px solid #333;
+  border-radius: 8px;
+  background-color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.game-button:hover {
+  background-color: #f3f3f3;
+  transform: translateY(-1px);
+}
+.game-button:active {
+  transform: translateY(0);
+}
+/*PLAY & DISCARD BUTTONS*/
+.card-action {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 8px;
+  border-radius: 6px;
+}
+.card-action.play {
+  background-color: #e6f9ec;
+  color: #0f7a2f;
+  border: 1px solid #0f7a2f;
+}
+.card-action.discard {
+  background-color: #ffe6e6;
+  color: #b00020;
+  border: 1px solid #b00020;
+}
+/*PLAYTEST PAGE BORDERS*/
+.game-zone {
+  border: 1px solid black;
+  border-radius: 8px;
+  padding: 12px;
+  background-color: #fafafa;
+}
+/*PLAYTEST PAGE TITLE*/
+.game-title {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-bottom: 24px;
 }

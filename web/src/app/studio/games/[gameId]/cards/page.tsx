@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Card from "@/components/Card";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -31,10 +32,10 @@ export default async function CardsByGamePage({
     }
 
     const { data: cards, error } = await supa
-        .from("cards")
-        .select("id,name,type,cost,attack,defense,created_at")
-        .eq("game_id", gameId)
-        .order("created_at", { ascending: false });
+           .from("cards")
+           .select("id,name,type,cost,attack,defense,created_at,image_url,rules_text")
+           .eq("game_id", gameId)
+           .order("created_at", { ascending: false });
 
     if (error) {
         return (
@@ -48,41 +49,41 @@ export default async function CardsByGamePage({
     const list = cards ?? [];
 
     return (
-        <main className="mx-auto max-w-3xl p-6">
-            <div className="flex items-baseline justify-between">
-                <div>
-                    <Link className="underline text-sm" href="/studio/games">
-                        ← Back to My Games
-                    </Link>
-                    <h1 className="mt-2 text-2xl font-semibold">{game.title} — Cards</h1>
-                </div>
-
-                <Link className="underline" href={`/studio/cards/new?gameId=${encodeURIComponent(gameId)}`}>
+        <main className="space-y-4">
+            <div className="flex items-center justify-between">
+                <Link
+                    href="/studio/games"
+                    className="rounded bg-black px-4 py-2 text-white hover:bg-gray-800 transition text-base"
+                >
+                    ← Back to My Games
+                </Link>
+                <h1 className="text-2xl font-semibold text-center flex-1">
+                    {game.title}
+                </h1>
+                <Link
+                    href={`/studio/cards/new?gameId=${encodeURIComponent(gameId)}`}
+                    className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition"
+                >
                     + New Card
                 </Link>
             </div>
-
+            <div className="mb-10" />
             {list.length === 0 ? (
-                <div className="mt-6 rounded border p-5">
-                    <div className="font-medium">No cards yet.</div>
-                    <div className="mt-1 text-sm opacity-80">Create your first card for this game.</div>
+                <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <Link
+                        href={`/studio/cards/new?gameId=${encodeURIComponent(gameId)}`}
+                        className="group block overflow-hidden rounded-xl border bg-white shadow-sm transition-shadow duration-150 hover:shadow-md flex flex-col items-center justify-center min-h-44 max-h-44"
+                    >
+                        <span className="text-5xl text-gray-400 group-hover:text-blue-600 transition">+</span>
+                        <span className="mt-2 text-sm text-gray-500 group-hover:text-blue-600 transition">No cards yet. Create first card</span>
+                    </Link>
                 </div>
             ) : (
-                <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {list.map((c) => (
-                        <li key={c.id} className="rounded border p-3">
-                            <div className="font-medium">{c.name}</div>
-                            <div className="mt-1 text-sm opacity-80">
-                                {c.type ?? "—"} · Cost {c.cost ?? 0}
-                            </div>
-                            {(c.attack != null || c.defense != null) && (
-                                <div className="mt-2 text-sm">
-                                    ATK {c.attack ?? 0} · DEF {c.defense ?? 0}
-                                </div>
-                            )}
-                        </li>
+                        <Card key={c.id} card={c} detailsHref={`/studio/cards/${c.id}`} />
                     ))}
-                </ul>
+                </div>
             )}
         </main>
     );
