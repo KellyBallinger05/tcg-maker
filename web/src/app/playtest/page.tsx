@@ -16,7 +16,7 @@ function shuffle<T>(arr: T[]) {
     const a = [...arr]
     for (let i = a.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1))
-            ;[a[i], a[j]] = [a[j], a[i]]
+        ;[a[i], a[j]] = [a[j], a[i]]
     }
     return a
 }
@@ -97,16 +97,13 @@ export default function PlaytestPage() {
         <div style={{ padding: 20, maxWidth: 1100, margin: "0 auto" }}>
             <h1 className="game-title">Playtest (Dev Deck)</h1>
 
-
             <div className="game-controls">
                 <button className="game-button" onClick={draw}>
                     Draw
                 </button>
-
                 <button className="game-button" onClick={endTurn}>
                     End Turn
                 </button>
-
                 <button className="game-button" onClick={reset}>
                     Reset
                 </button>
@@ -203,10 +200,7 @@ function CardRow({
                 </div>
             </div>
             {actionLabel ? (
-                <div
-                    className={`card-action ${actionLabel === "Play" ? "play" : "discard"
-                        }`}
-                >
+                <div className={`card-action ${actionLabel === "Play" ? "play" : "discard"}`}>
                     {actionLabel}
                 </div>
             ) : null}
