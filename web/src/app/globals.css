@@ -35,3 +35,67 @@ button:focus {
   outline: 3px solid #f59e0b;
   outline-offset: 2px;
 }
+
+/* PLAYTEST PAGE BUTTONS*/
+.game-controls {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.game-button {
+  padding: 8px 16px;
+  border: 2px solid #333;
+  border-radius: 8px;
+  background-color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.game-button:hover {
+  background-color: #f3f3f3;
+  transform: translateY(-1px);
+}
+
+.game-button:active {
+  transform: translateY(0);
+}
+
+/*PLAY & DISCARD BUTTONS*/
+.card-action {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 8px;
+  border-radius: 6px;
+}
+
+.card-action.play {
+  background-color: #e6f9ec;
+  color: #0f7a2f;
+  border: 1px solid #0f7a2f;
+}
+
+.card-action.discard {
+  background-color: #ffe6e6;
+  color: #b00020;
+  border: 1px solid #b00020;
+}
+
+
+/*PLAYTEST PAGE BORDERS*/
+.game-zone {
+  border: 1px solid black;
+  border-radius: 8px;
+  padding: 12px;
+  background-color: #fafafa;
+}
+
+/*PLAYTEST PAGE TITLE*/
+.game-title {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-bottom: 24px;
+}
+

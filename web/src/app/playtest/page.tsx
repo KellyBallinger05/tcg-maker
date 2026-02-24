@@ -1,81 +1,209 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import {
-  createMatch,
-  applyAction,
-  MatchState,
-  Phase,
-  GameAction,
-} from "@/lib/engine";
+import { useMemo, useState } from "react"
+import { sampleDevDeck, type Card } from "@/lib/dev/sampleDeck"
 
-// Example decks for testing
-const player1Deck = ["c1", "c1", "c1", "o1", "c1"];
-const player2Deck = ["c1", "c1", "o1", "c1", "c1"];
+type GameState = {
+    deck: Card[]
+    hand: Card[]
+    battlefield: Card[]
+    discard: Card[]
+    turn: number
+    log: string[]
+}
 
-export default function Playtest() {
-  // Initialize match once
-  const [match, setMatch] = useState<MatchState>(() =>
-    createMatch(player1Deck, player2Deck, 12345)
-  );
-  const [log, setLog] = useState<string[]>([]);
-
-  // Helper to dispatch action and update state
-  function doAction(action: GameAction, description: string) {
-    const newMatch = applyAction(match, action);
-    setMatch(newMatch);
-    setLog((prev) => [...prev, description]);
-
-    if (newMatch.winner) {
-      setLog((prev) => [...prev, `Winner: ${newMatch.winner}`]);
+function shuffle<T>(arr: T[]) {
+    const a = [...arr]
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[a[i], a[j]] = [a[j], a[i]]
     }
-  }
+    return a
+}
 
-  return (
-    <main className="mx-auto max-w-4xl p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Playtest vs AI</h1>
+export default function PlaytestPage() {
+    const initial = useMemo<GameState>(() => {
+        const deck = shuffle(sampleDevDeck)
+        const openingHand = deck.slice(0, 5)
+        const rest = deck.slice(5)
+        return {
+            deck: rest,
+            hand: openingHand,
+            battlefield: [],
+            discard: [],
+            turn: 1,
+            log: [`Game started. Drew opening hand (5).`],
+        }
+    }, [])
 
-      {/* Draw Card Button */}
-      <button
-        className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2
-                   text-white text-base font-medium shadow-sm
-                   hover:bg-blue-700 disabled:opacity-50
-                   focus-visible:outline-none
-                   focus-visible:ring-2 focus-visible:ring-amber-500
-                   focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-        onClick={() => doAction({ type: "DRAW_CARD" }, "Drew 1 card")}
-      >
-        Draw Card
-      </button>
+    const [state, setState] = useState<GameState>(initial)
 
-      {/* End Phase Button */}
-      <button
-        className="inline-flex items-center rounded-lg bg-green-600 px-4 py-2
-                   text-white text-base font-medium shadow-sm
-                   hover:bg-green-700 disabled:opacity-50
-                   focus-visible:outline-none
-                   focus-visible:ring-2 focus-visible:ring-amber-500
-                   focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-        onClick={() => doAction({ type: "END_PHASE" }, `Ended phase: ${match.phase}`)}
-      >
-        End Phase
-      </button>
+    const draw = () => {
+        setState((s) => {
+            if (s.deck.length === 0) {
+                return { ...s, log: [...s.log, "Tried to draw, but deck is empty."] }
+            }
+            const card = s.deck[0]
+            return {
+                ...s,
+                deck: s.deck.slice(1),
+                hand: [...s.hand, card],
+                log: [...s.log, `Drew: ${card.name}`],
+            }
+        })
+    }
 
-      <pre
-        className="whitespace-pre-wrap rounded-lg border border-gray-200 bg-gray-50
-                   p-4 text-sm text-gray-800"
-        aria-live="polite"
-      >
-        {log.length ? log.join("\n") : "No actions yet."}
-      </pre>
+    const playFromHand = (cardId: string) => {
+        setState((s) => {
+            const idx = s.hand.findIndex((c) => c.id === cardId)
+            if (idx === -1) return s
+            const card = s.hand[idx]
+            const newHand = [...s.hand.slice(0, idx), ...s.hand.slice(idx + 1)]
+            return {
+                ...s,
+                hand: newHand,
+                battlefield: [...s.battlefield, card],
+                log: [...s.log, `Played to battlefield: ${card.name}`],
+            }
+        })
+    }
 
-      <pre
-        className="whitespace-pre-wrap rounded-lg border border-gray-200 bg-gray-50
-                   p-4 text-sm text-gray-800"
-      >
-        {/* Debug: show match state */}
-        {JSON.stringify(match, null, 2)}
-      </pre>
-    </main>
-  );
+    const discardFromBattlefield = (cardId: string) => {
+        setState((s) => {
+            const idx = s.battlefield.findIndex((c) => c.id === cardId)
+            if (idx === -1) return s
+            const card = s.battlefield[idx]
+            const newField = [...s.battlefield.slice(0, idx), ...s.battlefield.slice(idx + 1)]
+            return {
+                ...s,
+                battlefield: newField,
+                discard: [...s.discard, card],
+                log: [...s.log, `Moved to discard: ${card.name}`],
+            }
+        })
+    }
+
+    const endTurn = () => {
+        setState((s) => ({
+            ...s,
+            turn: s.turn + 1,
+            log: [...s.log, `Ended turn ${s.turn}. Now turn ${s.turn + 1}.`],
+        }))
+    }
+
+    const reset = () => setState(initial)
+
+    return (
+        <div style={{ padding: 20, maxWidth: 1100, margin: "0 auto" }}>
+            <h1 className="game-title">Playtest (Dev Deck)</h1>
+
+            <div className="game-controls">
+                <button className="game-button" onClick={draw}>
+                    Draw
+                </button>
+                <button className="game-button" onClick={endTurn}>
+                    End Turn
+                </button>
+                <button className="game-button" onClick={reset}>
+                    Reset
+                </button>
+            </div>
+
+            <p><b>Turn:</b> {state.turn}</p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <Zone title={`Deck (${state.deck.length})`}>
+                    <small>(top card hidden)</small>
+                </Zone>
+
+                <Zone title={`Discard (${state.discard.length})`}>
+                    {state.discard.map((c) => (
+                        <CardRow key={c.id} card={c} />
+                    ))}
+                </Zone>
+
+                <Zone title={`Hand (${state.hand.length})`}>
+                    {state.hand.map((c) => (
+                        <CardRow key={c.id} card={c} onClick={() => playFromHand(c.id)} actionLabel="Play" />
+                    ))}
+                </Zone>
+
+                <Zone title={`Battlefield (${state.battlefield.length})`}>
+                    {state.battlefield.map((c) => (
+                        <CardRow
+                            key={c.id}
+                            card={c}
+                            onClick={() => discardFromBattlefield(c.id)}
+                            actionLabel="Discard"
+                        />
+                    ))}
+                </Zone>
+            </div>
+
+            <Zone title="Action Log" style={{ marginTop: 16 }}>
+                <div style={{ maxHeight: 220, overflow: "auto" }}>
+                    {state.log.slice().reverse().map((line, i) => (
+                        <div key={i} style={{ fontFamily: "monospace", fontSize: 13, marginBottom: 6 }}>
+                            {line}
+                        </div>
+                    ))}
+                </div>
+            </Zone>
+        </div>
+    )
+}
+
+function Zone({
+    title,
+    children,
+    style,
+}: {
+    title: string
+    children?: React.ReactNode
+    style?: React.CSSProperties
+}) {
+    return (
+        <div className="game-zone" style={style}>
+            <h3 style={{ marginTop: 0 }}>{title}</h3>
+            {children}
+        </div>
+    )
+}
+
+function CardRow({
+    card,
+    onClick,
+    actionLabel,
+}: {
+    card: Card
+    onClick?: () => void
+    actionLabel?: string
+}) {
+    return (
+        <div
+            style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "8px 10px",
+                border: "1px solid #eee",
+                borderRadius: 8,
+                marginBottom: 8,
+                cursor: onClick ? "pointer" : "default",
+            }}
+            onClick={onClick}
+            title={onClick ? "Click to act" : undefined}
+        >
+            <div>
+                <div><b>{card.name}</b></div>
+                <div style={{ fontSize: 12, opacity: 0.8 }}>
+                    {card.type ?? "Card"}{card.cost != null ? ` • Cost ${card.cost}` : ""}
+                </div>
+            </div>
+            {actionLabel ? (
+                <div className={`card-action ${actionLabel === "Play" ? "play" : "discard"}`}>
+                    {actionLabel}
+                </div>
+            ) : null}
+        </div>
+    )
 }
