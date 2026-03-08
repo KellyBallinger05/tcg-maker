@@ -17,6 +17,10 @@ type GameState = {
   hand: PlaytestCard[];
   battlefield: PlaytestCard[];
   discard: PlaytestCard[];
+  aiDeck: PlaytestCard[];
+  aiHand: PlaytestCard[];
+  aiBattlefield: PlaytestCard[];
+  aiDiscard: PlaytestCard[];
   turn: number;
   log: string[];
 };
@@ -28,6 +32,41 @@ function shuffle<T>(arr: T[]) {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+function aiTakeTurn(s: GameState): GameState {
+  let newLog = [...s.log];
+  let aiDeck = [...s.aiDeck];
+  let aiHand = [...s.aiHand];
+  let aiBattlefield = [...s.aiBattlefield];
+
+  // ai draws a card
+  if (aiDeck.length === 0) {
+    newLog.push("Opponent tried to draw, but their deck is empty.");
+  } else {
+    const drawn = aiDeck[0];
+    aiDeck = aiDeck.slice(1);
+    aiHand = [...aiHand, drawn];
+    newLog.push(`Opponent draws a card.`);
+  }
+
+  // ai plays first card in hand
+  if (aiHand.length > 0) {
+    const toPlay = aiHand[0];
+    aiHand = aiHand.slice(1);
+    aiBattlefield = [...aiBattlefield, toPlay];
+    newLog.push(`Opponent plays: ${toPlay.name}`);
+  } else {
+    newLog.push("Opponent has no cards to play.");
+  }
+
+  return {
+    ...s,
+    aiDeck,
+    aiHand,
+    aiBattlefield,
+    log: newLog,
+  };
 }
 
 export default function PlaytestClient({
@@ -42,11 +81,22 @@ export default function PlaytestClient({
     const openingHand = deck.slice(0, 5);
     const rest = deck.slice(5);
 
+    // ai gets its own shuffled copy of the same deck
+    const aiDeck = shuffle(
+      initialDeck.map((c) => ({ ...c, instanceId: `ai-${c.instanceId}` }))
+    );
+    const aiOpeningHand = aiDeck.slice(0, 5);
+    const aiRest = aiDeck.slice(5);
+
     return {
       deck: rest,
       hand: openingHand,
       battlefield: [],
       discard: [],
+      aiDeck: aiRest,
+      aiHand: aiOpeningHand,
+      aiBattlefield: [],
+      aiDiscard: [],
       turn: 1,
       log: [`Game started with "${deckName}". Drew opening hand (${openingHand.length}).`],
     };
@@ -59,9 +109,7 @@ export default function PlaytestClient({
       if (s.deck.length === 0) {
         return { ...s, log: [...s.log, "Tried to draw, but deck is empty."] };
       }
-
       const card = s.deck[0];
-
       return {
         ...s,
         deck: s.deck.slice(1),
@@ -75,10 +123,8 @@ export default function PlaytestClient({
     setState((s) => {
       const idx = s.hand.findIndex((c) => c.instanceId === instanceId);
       if (idx === -1) return s;
-
       const card = s.hand[idx];
       const newHand = [...s.hand.slice(0, idx), ...s.hand.slice(idx + 1)];
-
       return {
         ...s,
         hand: newHand,
@@ -92,10 +138,8 @@ export default function PlaytestClient({
     setState((s) => {
       const idx = s.battlefield.findIndex((c) => c.instanceId === instanceId);
       if (idx === -1) return s;
-
       const card = s.battlefield[idx];
       const newField = [...s.battlefield.slice(0, idx), ...s.battlefield.slice(idx + 1)];
-
       return {
         ...s,
         battlefield: newField,
@@ -106,11 +150,14 @@ export default function PlaytestClient({
   };
 
   const endTurn = () => {
-    setState((s) => ({
-      ...s,
-      turn: s.turn + 1,
-      log: [...s.log, `Ended turn ${s.turn}. Now turn ${s.turn + 1}.`],
-    }));
+    setState((s) => {
+      const afterIncrement: GameState = {
+        ...s,
+        turn: s.turn + 1,
+        log: [...s.log, `--- You ended turn ${s.turn}. Opponent is thinking... ---`],
+      };
+      return aiTakeTurn(afterIncrement);
+    });
   };
 
   const reset = () => setState(initial);
@@ -136,17 +183,18 @@ export default function PlaytestClient({
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        <Zone title={`Deck (${state.deck.length})`}>
+        {/* Player zones */}
+        <Zone title={`Your Deck (${state.deck.length})`}>
           <small>(top card hidden)</small>
         </Zone>
 
-        <Zone title={`Discard (${state.discard.length})`}>
+        <Zone title={`Your Discard (${state.discard.length})`}>
           {state.discard.map((c) => (
             <CardRow key={c.instanceId} card={c} />
           ))}
         </Zone>
 
-        <Zone title={`Hand (${state.hand.length})`}>
+        <Zone title={`Your Hand (${state.hand.length})`}>
           {state.hand.map((c) => (
             <CardRow
               key={c.instanceId}
@@ -157,7 +205,7 @@ export default function PlaytestClient({
           ))}
         </Zone>
 
-        <Zone title={`Battlefield (${state.battlefield.length})`}>
+        <Zone title={`Your Battlefield (${state.battlefield.length})`}>
           {state.battlefield.map((c) => (
             <CardRow
               key={c.instanceId}
@@ -165,6 +213,27 @@ export default function PlaytestClient({
               onClick={() => discardFromBattlefield(c.instanceId)}
               actionLabel="Discard"
             />
+          ))}
+        </Zone>
+
+        {/* ai zones */}
+        <Zone title={`Opponent Deck (${state.aiDeck.length})`}>
+          <small>(hidden)</small>
+        </Zone>
+
+        <Zone title={`Opponent Hand (${state.aiHand.length} cards)`}>
+          <small>(hidden)</small>
+        </Zone>
+
+        <Zone title={`Opponent Battlefield (${state.aiBattlefield.length})`}>
+          {state.aiBattlefield.map((c) => (
+            <CardRow key={c.instanceId} card={c} />
+          ))}
+        </Zone>
+
+        <Zone title={`Opponent Discard (${state.aiDiscard.length})`}>
+          {state.aiDiscard.map((c) => (
+            <CardRow key={c.instanceId} card={c} />
           ))}
         </Zone>
       </div>
