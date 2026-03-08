@@ -3,18 +3,19 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
 type PageProps = {
-  params: {
+  params: Promise<{
     deckId: string;
-  };
+  }>;
 };
 
 export default async function DeckDetailPage({ params }: PageProps) {
+  const { deckId } = await params;
   const supa = await createClient();
 
   const { data: deck, error } = await supa
     .from("decks")
     .select("id,name")
-    .eq("id", params.deckId)
+    .eq("id", deckId)
     .single();
 
   if (error || !deck) {
@@ -29,7 +30,7 @@ export default async function DeckDetailPage({ params }: PageProps) {
         <Link href={`/playtest/${deck.id}`} className="underline">
           Playtest
         </Link>
-        <Link href="/decks" className="underline">
+        <Link href="/studio/decks" className="underline">
           Back to Decks
         </Link>
       </div>

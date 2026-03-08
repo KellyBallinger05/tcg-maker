@@ -3,9 +3,14 @@ import { revalidatePath } from "next/cache";
 import DeckBuilderClient from "../../../components/DeckBuilderClient";
 import { createClient } from "@/lib/supabase/server";
 
-
 export default async function DecksPage() {
   const supa = await createClient();
+
+  const {
+    data: { user },
+  } = await supa.auth.getUser();
+
+  const userId = user?.id ?? null;
 
   async function createDeck(formData: FormData) {
     "use server";
@@ -18,7 +23,6 @@ export default async function DecksPage() {
     if (!name || !gameId) return;
 
     const { data } = await supa.auth.getUser();
-
     const userId = data?.user?.id ?? null;
 
     const { error } = await supa.from("decks").insert({
@@ -32,7 +36,7 @@ export default async function DecksPage() {
       return;
     }
 
-    revalidatePath("/decks");
+    revalidatePath("/studio/decks");
   }
 
   const { data: gamesData } = await supa
@@ -52,7 +56,7 @@ export default async function DecksPage() {
   if (firstGameId) {
     const { data: cards } = await supa
       .from("cards")
-      .select("id,name,type,cost,attack,defense")
+      .select("id,name,type,cost,attack,defense,image_url")
       .eq("game_id", firstGameId)
       .order("created_at", { ascending: false });
 
@@ -63,6 +67,7 @@ export default async function DecksPage() {
       cost: c.cost ?? 0,
       attack: c.attack ?? 0,
       defense: c.defense ?? 0,
+      image_url: c.image_url ?? null,
     }));
   }
 
@@ -77,6 +82,7 @@ export default async function DecksPage() {
         title
       )
     `)
+    .eq("owner_id", userId)
     .order("created_at", { ascending: false });
 
   const decks = decksData ?? [];
@@ -85,7 +91,6 @@ export default async function DecksPage() {
     <main className="p-6 space-y-8">
       <section className="space-y-4">
         <h1 className="text-2xl font-bold">Decks</h1>
-
       </section>
 
       <section className="space-y-4">
