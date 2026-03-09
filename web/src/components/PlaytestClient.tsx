@@ -34,39 +34,69 @@ function shuffle<T>(arr: T[]) {
   return a;
 }
 
-function aiTakeTurn(s: GameState): GameState {
-  let newLog = [...s.log];
-  let aiDeck = [...s.aiDeck];
-  let aiHand = [...s.aiHand];
-  let aiBattlefield = [...s.aiBattlefield];
+// --- shared game logic between player and AI ---
 
-  // ai draws a card
-  if (aiDeck.length === 0) {
-    newLog.push("Opponent tried to draw, but their deck is empty.");
-  } else {
-    const drawn = aiDeck[0];
-    aiDeck = aiDeck.slice(1);
-    aiHand = [...aiHand, drawn];
-    newLog.push(`Opponent draws a card.`);
+function drawCard(s: GameState, isAi = false): GameState {
+  const deck = isAi ? s.aiDeck : s.deck;
+  const hand = isAi ? s.aiHand : s.hand;
+  const prefix = isAi ? "Opponent" : "You";
+
+  if (deck.length === 0) {
+    return { ...s, log: [...s.log, `${prefix} tried to draw, but the deck is empty.`] };
   }
 
-  // ai plays first card in hand
-  if (aiHand.length > 0) {
-    const toPlay = aiHand[0];
-    aiHand = aiHand.slice(1);
-    aiBattlefield = [...aiBattlefield, toPlay];
-    newLog.push(`Opponent plays: ${toPlay.name}`);
-  } else {
-    newLog.push("Opponent has no cards to play.");
-  }
+  const card = deck[0];
+  const newDeck = deck.slice(1);
+  const newHand = [...hand, card];
+
+  return isAi
+    ? { ...s, aiDeck: newDeck, aiHand: newHand, log: [...s.log, `Opponent draws a card.`] }
+    : { ...s, deck: newDeck, hand: newHand, log: [...s.log, `Drew: ${card.name}`] };
+}
+
+function playCard(s: GameState, instanceId: string, isAi = false): GameState {
+  const hand = isAi ? s.aiHand : s.hand;
+  const battlefield = isAi ? s.aiBattlefield : s.battlefield;
+  const prefix = isAi ? "Opponent plays" : "Played to battlefield";
+
+  const idx = hand.findIndex((c) => c.instanceId === instanceId);
+  if (idx === -1) return s;
+
+  const card = hand[idx];
+  const newHand = [...hand.slice(0, idx), ...hand.slice(idx + 1)];
+  const newBattlefield = [...battlefield, card];
+
+  return isAi
+    ? { ...s, aiHand: newHand, aiBattlefield: newBattlefield, log: [...s.log, `${prefix}: ${card.name}`] }
+    : { ...s, hand: newHand, battlefield: newBattlefield, log: [...s.log, `${prefix}: ${card.name}`] };
+}
+
+function discardCard(s: GameState, instanceId: string): GameState {
+  const idx = s.battlefield.findIndex((c) => c.instanceId === instanceId);
+  if (idx === -1) return s;
+
+  const card = s.battlefield[idx];
+  const newField = [...s.battlefield.slice(0, idx), ...s.battlefield.slice(idx + 1)];
 
   return {
     ...s,
-    aiDeck,
-    aiHand,
-    aiBattlefield,
-    log: newLog,
+    battlefield: newField,
+    discard: [...s.discard, card],
+    log: [...s.log, `Moved to discard: ${card.name}`],
   };
+}
+
+function aiTakeTurn(s: GameState): GameState {
+  let next = drawCard(s, true);
+
+  if (next.aiHand.length > 0) {
+    const cardToPlay = next.aiHand[0];
+    next = playCard(next, cardToPlay.instanceId, true);
+  } else {
+    next = { ...next, log: [...next.log, "Opponent has no cards to play."] };
+  }
+
+  return next;
 }
 
 export default function PlaytestClient({
@@ -81,7 +111,6 @@ export default function PlaytestClient({
     const openingHand = deck.slice(0, 5);
     const rest = deck.slice(5);
 
-    // ai gets its own shuffled copy of the same deck
     const aiDeck = shuffle(
       initialDeck.map((c) => ({ ...c, instanceId: `ai-${c.instanceId}` }))
     );
@@ -104,50 +133,9 @@ export default function PlaytestClient({
 
   const [state, setState] = useState<GameState>(initial);
 
-  const draw = () => {
-    setState((s) => {
-      if (s.deck.length === 0) {
-        return { ...s, log: [...s.log, "Tried to draw, but deck is empty."] };
-      }
-      const card = s.deck[0];
-      return {
-        ...s,
-        deck: s.deck.slice(1),
-        hand: [...s.hand, card],
-        log: [...s.log, `Drew: ${card.name}`],
-      };
-    });
-  };
-
-  const playFromHand = (instanceId: string) => {
-    setState((s) => {
-      const idx = s.hand.findIndex((c) => c.instanceId === instanceId);
-      if (idx === -1) return s;
-      const card = s.hand[idx];
-      const newHand = [...s.hand.slice(0, idx), ...s.hand.slice(idx + 1)];
-      return {
-        ...s,
-        hand: newHand,
-        battlefield: [...s.battlefield, card],
-        log: [...s.log, `Played to battlefield: ${card.name}`],
-      };
-    });
-  };
-
-  const discardFromBattlefield = (instanceId: string) => {
-    setState((s) => {
-      const idx = s.battlefield.findIndex((c) => c.instanceId === instanceId);
-      if (idx === -1) return s;
-      const card = s.battlefield[idx];
-      const newField = [...s.battlefield.slice(0, idx), ...s.battlefield.slice(idx + 1)];
-      return {
-        ...s,
-        battlefield: newField,
-        discard: [...s.discard, card],
-        log: [...s.log, `Moved to discard: ${card.name}`],
-      };
-    });
-  };
+  const draw = () => setState((s) => drawCard(s, false));
+  const playFromHand = (instanceId: string) => setState((s) => playCard(s, instanceId, false));
+  const discardFromBattlefield = (instanceId: string) => setState((s) => discardCard(s, instanceId));
 
   const endTurn = () => {
     setState((s) => {
@@ -167,56 +155,34 @@ export default function PlaytestClient({
       <h1 className="game-title">Playtest ({deckName})</h1>
 
       <div className="game-controls">
-        <button className="game-button" onClick={draw}>
-          Draw
-        </button>
-        <button className="game-button" onClick={endTurn}>
-          End Turn
-        </button>
-        <button className="game-button" onClick={reset}>
-          Reset
-        </button>
+        <button className="game-button" onClick={draw}>Draw</button>
+        <button className="game-button" onClick={endTurn}>End Turn</button>
+        <button className="game-button" onClick={reset}>Reset</button>
       </div>
 
-      <p>
-        <b>Turn:</b> {state.turn}
-      </p>
+      <p><b>Turn:</b> {state.turn}</p>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        {/* Player zones */}
         <Zone title={`Your Deck (${state.deck.length})`}>
           <small>(top card hidden)</small>
         </Zone>
 
         <Zone title={`Your Discard (${state.discard.length})`}>
-          {state.discard.map((c) => (
-            <CardRow key={c.instanceId} card={c} />
-          ))}
+          {state.discard.map((c) => <CardRow key={c.instanceId} card={c} />)}
         </Zone>
 
         <Zone title={`Your Hand (${state.hand.length})`}>
           {state.hand.map((c) => (
-            <CardRow
-              key={c.instanceId}
-              card={c}
-              onClick={() => playFromHand(c.instanceId)}
-              actionLabel="Play"
-            />
+            <CardRow key={c.instanceId} card={c} onClick={() => playFromHand(c.instanceId)} actionLabel="Play" />
           ))}
         </Zone>
 
         <Zone title={`Your Battlefield (${state.battlefield.length})`}>
           {state.battlefield.map((c) => (
-            <CardRow
-              key={c.instanceId}
-              card={c}
-              onClick={() => discardFromBattlefield(c.instanceId)}
-              actionLabel="Discard"
-            />
+            <CardRow key={c.instanceId} card={c} onClick={() => discardFromBattlefield(c.instanceId)} actionLabel="Discard" />
           ))}
         </Zone>
 
-        {/* ai zones */}
         <Zone title={`Opponent Deck (${state.aiDeck.length})`}>
           <small>(hidden)</small>
         </Zone>
@@ -226,39 +192,26 @@ export default function PlaytestClient({
         </Zone>
 
         <Zone title={`Opponent Battlefield (${state.aiBattlefield.length})`}>
-          {state.aiBattlefield.map((c) => (
-            <CardRow key={c.instanceId} card={c} />
-          ))}
+          {state.aiBattlefield.map((c) => <CardRow key={c.instanceId} card={c} />)}
         </Zone>
 
         <Zone title={`Opponent Discard (${state.aiDiscard.length})`}>
-          {state.aiDiscard.map((c) => (
-            <CardRow key={c.instanceId} card={c} />
-          ))}
+          {state.aiDiscard.map((c) => <CardRow key={c.instanceId} card={c} />)}
         </Zone>
       </div>
 
       <Zone title="Action Log" style={{ marginTop: 16 }}>
         <div style={{ maxHeight: 220, overflow: "auto" }}>
-          {state.log
-            .slice()
-            .reverse()
-            .map((line, i) => (
-              <div key={i} style={{ fontFamily: "monospace", fontSize: 13, marginBottom: 6 }}>
-                {line}
-              </div>
-            ))}
+          {state.log.slice().reverse().map((line, i) => (
+            <div key={i} style={{ fontFamily: "monospace", fontSize: 13, marginBottom: 6 }}>{line}</div>
+          ))}
         </div>
       </Zone>
     </div>
   );
 }
 
-function Zone({
-  title,
-  children,
-  style,
-}: {
+function Zone({ title, children, style }: {
   title: string;
   children?: React.ReactNode;
   style?: React.CSSProperties;
@@ -271,11 +224,7 @@ function Zone({
   );
 }
 
-function CardRow({
-  card,
-  onClick,
-  actionLabel,
-}: {
+function CardRow({ card, onClick, actionLabel }: {
   card: PlaytestCard;
   onClick?: () => void;
   actionLabel?: string;
@@ -295,9 +244,7 @@ function CardRow({
       title={onClick ? "Click to act" : undefined}
     >
       <div>
-        <div>
-          <b>{card.name}</b>
-        </div>
+        <div><b>{card.name}</b></div>
         <div style={{ fontSize: 12, opacity: 0.8 }}>
           {card.type ?? "Card"}
           {card.cost != null ? ` • Cost ${card.cost}` : ""}
