@@ -15,6 +15,7 @@ export default async function CardsList() {
     const { data: cards, error } = await supa
         .from("cards")
         .select("id, name, type, cost, attack, defense, rules_text, image_url, game_id, created_at")
+        .eq("created_by", user.id)
         .order("created_at", { ascending: false });
 
     if (error) return <p className="text-red-600">Error: {error.message}</p>;
