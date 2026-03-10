@@ -23,6 +23,7 @@ export interface CardInstance {
   definitionId: string;
   currentHealth?: number;
   hasAttacked?: boolean;
+  type: CardType
 }
 
 export interface PlayerState {
