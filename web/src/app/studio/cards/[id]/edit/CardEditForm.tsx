@@ -34,7 +34,6 @@ export function CardEditForm({
 }) {
     const initialState: UpdateCardState = { ok: false, message: "" };
 
-    // ✅ React 19 / Next 16: useActionState replaces useFormState
     const [state, formAction] = React.useActionState(updateCardAction, initialState);
 
     const fieldErr = (name: string) =>
