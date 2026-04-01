@@ -19,6 +19,9 @@ export function applyAction(state: MatchState, action: GameAction): MatchState {
 
   switch (action.type) {
     case "DRAW_CARD":
+      // Enforce draw phase rule
+      if (newState.phase !== Phase.DRAW) break;
+
       if (activePlayer.deck.length > 0) {
         const cardId = activePlayer.deck.shift()!;
         activePlayer.hand.push(cardId);
@@ -26,9 +29,15 @@ export function applyAction(state: MatchState, action: GameAction): MatchState {
       break;
 
     case "PLAY_CREATURE":
+      // Enforce action phase rule
+      if (newState.phase !== Phase.ACTION) break;
+
       if (activePlayer.hand.includes(action.cardId)) {
+        // Basic resource validation for playtests
+        if (activePlayer.resources.current <= 0) break;
+
         const cardInstance: CardInstance = {
-          instanceId: `${action.cardId}_${Date.now()}`,
+          instanceId: `${action.cardId}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
           definitionId: action.cardId,
           currentHealth: 1, // Placeholder: can pull actual health from definition
           hasAttacked: false,
@@ -39,15 +48,23 @@ export function applyAction(state: MatchState, action: GameAction): MatchState {
           activePlayer.hand = activePlayer.hand.filter((id) => id !== action.cardId);
           activePlayer.battlefield[action.slotIndex] = cardInstance.instanceId;
           newState.cardInstances[cardInstance.instanceId] = cardInstance;
+
           // Deduct resource here if needed (simplified)
+          activePlayer.resources.current -= 1;
         }
       }
       break;
 
     case "PLAY_OBJECT":
+      // Enforce action phase rule
+      if (newState.phase !== Phase.ACTION) break;
+
       if (activePlayer.hand.includes(action.cardId)) {
+        // Basic resource validation for playtests
+        if (activePlayer.resources.current <= 0) break;
+
         const cardInstance: CardInstance = {
-          instanceId: `${action.cardId}_${Date.now()}`,
+          instanceId: `${action.cardId}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
           definitionId: action.cardId,
           hasAttacked: false,
           type: CardType.OBJECT, // Added type
@@ -56,11 +73,16 @@ export function applyAction(state: MatchState, action: GameAction): MatchState {
         activePlayer.hand = activePlayer.hand.filter((id) => id !== action.cardId);
         activePlayer.discard.push(action.cardId);
         newState.cardInstances[cardInstance.instanceId] = cardInstance;
+
         // Implement object effect here if needed
+        activePlayer.resources.current -= 1;
       }
       break;
 
     case "DECLARE_ATTACK":
+      // Enforce combat phase rule
+      if (newState.phase !== Phase.COMBAT) break;
+
       const attackerId = activePlayer.battlefield[action.attackerSlot];
       if (!attackerId) break;
 
@@ -101,12 +123,15 @@ export function applyAction(state: MatchState, action: GameAction): MatchState {
         case Phase.DRAW:
           newState.phase = Phase.ACTION;
           break;
+
         case Phase.ACTION:
           newState.phase = Phase.COMBAT;
           break;
+
         case Phase.COMBAT:
           newState.phase = Phase.END;
           break;
+
         case Phase.END:
           // Pass turn to opponent
           newState.activePlayer = newState.activePlayer === "P1" ? "P2" : "P1";
