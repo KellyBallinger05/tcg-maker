@@ -38,5 +38,17 @@ export async function supabaseServerMutable() {
     });
 }
 
+// Helper to update game (title/description/status)
+export async function updateGame(gameId: string, data: { title?: string; description?: string; status?: string }) {
+    const supa = await supabaseServerMutable();
+    const { data: updated, error } = await supa
+        .from('games')
+        .update(data)
+        .eq('id', gameId);
+
+    if (error) throw error;
+    return updated;
+}
+
 export const createClient = supabaseServerReadOnly;
 export default createClient;
