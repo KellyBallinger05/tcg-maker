@@ -106,7 +106,7 @@ export default async function DecksPage() {
                 : deck.games?.title;
 
               return (
-                <div key={deck.id} className="border rounded p-4 space-y-2">
+                <div key={deck.id} className="rounded border border-gray-300 shadow-sm p-4 space-y-2">
                   <h3 className="text-lg font-bold">{deck.name}</h3>
                   <p className="text-sm">Game: {gameTitle ?? "Unknown game"}</p>
 
