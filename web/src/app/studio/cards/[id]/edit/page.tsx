@@ -15,15 +15,15 @@ export default async function CardEditPage({
 
     if (!auth.user) {
         return (
-            <div className="p-6">
-                <h1 className="text-xl font-semibold">Edit card</h1>
-                <p className="mt-2 text-sm text-muted-foreground">
+            <main className="mx-auto max-w-xl p-6 space-y-4">
+                <h1 className="text-2xl font-semibold">Edit card</h1>
+                <p className="text-sm text-gray-600">
                     Please sign in to edit cards.
                 </p>
-                <Link className="mt-4 inline-block underline" href="/login">
+                <Link className="mt-4 inline-block text-blue-600 underline" href="/login">
                     Sign in
                 </Link>
-            </div>
+            </main>
         );
     }
 
@@ -36,18 +36,18 @@ export default async function CardEditPage({
     if (error || !card) notFound();
 
     return (
-        <div className="p-6 space-y-4">
+        <main className="mx-auto max-w-xl p-6 space-y-6">
             <div className="flex items-start justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-semibold">Edit card</h1>
-                    <p className="text-xs text-muted-foreground">ID: {card.id}</p>
+                    <p className="text-sm text-gray-600">ID: {card.id}</p>
                 </div>
-                <Link className="underline" href={`/studio/cards/${card.id}`}>
+                <Link className="underline text-sm text-blue-600" href={`/studio/cards/${card.id}`}>
                     Back
                 </Link>
             </div>
 
             <CardEditForm card={card} />
-        </div>
+        </main>
     );
 }

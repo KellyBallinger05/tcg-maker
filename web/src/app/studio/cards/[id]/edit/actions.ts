@@ -24,14 +24,7 @@ const UpdateCardSchema = z.object({
     defense: intOrNull,
 
     rules_text: z.string().max(2000, "Rules text is too long").optional().default(""),
-    image_url: z
-        .string()
-        .trim()
-        .optional()
-        .refine((v) => !v || v.startsWith("http://") || v.startsWith("https://"), {
-            message: "Image URL must start with http:// or https://",
-        })
-        .default(""),
+    current_image_url: z.string().optional().default(""),
 });
 
 export type UpdateCardState =
@@ -53,7 +46,7 @@ export async function updateCardAction(
         defense: formData.get("defense"),
 
         rules_text: formData.get("rules_text"),
-        image_url: formData.get("image_url"),
+        current_image_url: formData.get("current_image_url"),
     });
 
     if (!parsed.success) {
@@ -69,10 +62,25 @@ export async function updateCardAction(
     const { data: auth } = await supa.auth.getUser();
     if (!auth.user) return { ok: false, message: "You must be signed in." };
 
-    const { cardId, name, type, cost, attack, defense, rules_text, image_url } =
+    const { cardId, name, type, cost, attack, defense, rules_text, current_image_url } =
         parsed.data;
 
-    // Only update editable columns
+    let image_url: string | null = current_image_url || null;
+
+    const imageFile = formData.get("image_file");
+    if (imageFile instanceof File && imageFile.size > 0) {
+        const ext = imageFile.name.split(".").pop() ?? "jpg";
+        const path = `${auth.user.id}/${cardId}.${ext}`;
+        const { error: uploadError } = await supa.storage
+            .from("card-images")
+            .upload(path, imageFile, { contentType: imageFile.type, upsert: true });
+        if (uploadError) {
+            return { ok: false, message: `Image upload failed: ${uploadError.message}` };
+        }
+        const { data: urlData } = supa.storage.from("card-images").getPublicUrl(path);
+        image_url = urlData.publicUrl;
+    }
+
     const { data, error } = await supa
         .from("cards")
         .update({
@@ -82,7 +90,7 @@ export async function updateCardAction(
             attack,
             defense,
             rules_text: rules_text || null,
-            image_url: image_url || null,
+            image_url,
         })
         .eq("id", cardId)
         .select("id")
@@ -95,10 +103,7 @@ export async function updateCardAction(
         };
     }
 
-    // Revalidate list + detail route (studio path!)
     revalidatePath("/studio/cards");
     revalidatePath(`/studio/cards/${cardId}`);
-
-    // Redirect to the correct detail route (studio path!)
     redirect(`/studio/cards/${cardId}?updated=1`);
 }

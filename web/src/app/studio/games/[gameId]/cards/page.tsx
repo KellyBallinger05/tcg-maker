@@ -32,7 +32,7 @@ export default async function CardsByGamePage({
 
     const { data: cards, error } = await supa
         .from("cards")
-        .select("id,name,type,cost,attack,defense,created_at")
+        .select("id,name,type,cost,attack,defense,created_at,image_url")
         .eq("game_id", gameId)
         .order("created_at", { ascending: false });
 
@@ -63,23 +63,76 @@ export default async function CardsByGamePage({
             </div>
 
             {list.length === 0 ? (
-                <div className="mt-6 rounded border p-5">
+                <div className="mt-6 rounded border border-gray-300 shadow-sm p-5">
                     <div className="font-medium">No cards yet.</div>
                     <div className="mt-1 text-sm opacity-80">Create your first card for this game.</div>
                 </div>
             ) : (
-                <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {list.map((c) => (
-                        <li key={c.id} className="rounded border p-3">
-                            <div className="font-medium">{c.name}</div>
-                            <div className="mt-1 text-sm opacity-80">
-                                {c.type ?? "—"} · Cost {c.cost ?? 0}
-                            </div>
-                            {(c.attack != null || c.defense != null) && (
-                                <div className="mt-2 text-sm">
-                                    ATK {c.attack ?? 0} · DEF {c.defense ?? 0}
+                        <li
+                            key={c.id}
+                            className="group overflow-hidden rounded-xl border border-gray-300 bg-white shadow-sm transition-shadow duration-150 hover:shadow-md"
+                        >
+                            <div className="w-full bg-gray-100 overflow-hidden relative card-image-wrapper card-image-ratio max-h-44">
+                                {c.image_url ? (
+                                    <>
+                                        <div
+                                            className="absolute inset-0 filter blur-sm scale-105"
+                                            style={{
+                                                backgroundImage: `url(${c.image_url})`,
+                                                backgroundSize: "cover",
+                                                backgroundPosition: "center",
+                                            }}
+                                        />
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={c.image_url}
+                                            alt={c.name ?? "Card image"}
+                                            className="relative mx-auto h-full w-full object-contain z-20"
+                                            loading="lazy"
+                                        />
+                                    </>
+                                ) : (
+                                    <div className="grid h-full w-full place-items-center card-no-image relative z-20">
+                                        No image
+                                    </div>
+                                )}
+
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 z-30">
+                                    <div className="flex justify-between items-end text-white">
+                                        <div className="flex gap-3">
+                                            <div className="flex flex-col items-center">
+                                                <span className="text-xs stat-label">Cost</span>
+                                                <span className="text-lg font-bold stat-outline">{c.cost || 0}</span>
+                                            </div>
+                                            <div className="flex flex-col items-center">
+                                                <span className="text-xs stat-label">ATK</span>
+                                                <span className="text-lg font-bold stat-outline">{c.attack || 0}</span>
+                                            </div>
+                                            <div className="flex flex-col items-center">
+                                                <span className="text-xs stat-label">DEF</span>
+                                                <span className="text-lg font-bold stat-outline">{c.defense || 0}</span>
+                                            </div>
+                                        </div>
+                                        <span className="px-2 py-1 rounded text-xs uppercase tracking-wider bg-white/20 text-black">
+                                            {(c.type || "unit").toString()}
+                                        </span>
+                                    </div>
                                 </div>
-                            )}
+                            </div>
+
+                            <div className="p-3">
+                                <div className="flex items-start justify-between gap-3">
+                                    <h2 className="text-lg font-semibold">{c.name}</h2>
+                                </div>
+                                <Link
+                                    href={`/studio/cards/${c.id}/edit`}
+                                    className="inline-block text-sm underline text-blue-600 mt-2"
+                                >
+                                    Edit
+                                </Link>
+                            </div>
                         </li>
                     ))}
                 </ul>
