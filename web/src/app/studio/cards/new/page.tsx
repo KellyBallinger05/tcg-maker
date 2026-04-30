@@ -166,10 +166,15 @@ export default async function NewCardPage({
                     <textarea name="rules_text" rows={4} className="mt-1 w-full rounded border border-gray-300 shadow-sm focus:border-blue-400 focus:ring-blue-100 p-2 transition" />
                 </label>
 
-                <label className="block">
+                <div className="block space-y-2">
                     <span className="text-sm font-medium">Card Image</span>
-                    <input type="file" name="image" accept="image/*" className="mt-1" />
-                </label>
+                    <input
+                        type="file"
+                        name="image"
+                        accept="image/*"
+                        className="mt-1 block w-full text-sm file:mr-3 file:rounded file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                </div>
 
                 <button className="rounded bg-blue-600 px-4 py-2 text-white">Create</button>
             </form>

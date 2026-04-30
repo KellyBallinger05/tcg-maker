@@ -46,7 +46,7 @@ export default async function GamesList() {
             </div>
 
             {list.length === 0 ? (
-                <div className="mt-6 rounded border p-5">
+                <div className="mt-6 rounded border border-gray-300 shadow-sm p-5">
                     <div className="font-medium">No games yet.</div>
                     <div className="mt-1 text-sm opacity-80">
                         Create your first game to start adding cards.
