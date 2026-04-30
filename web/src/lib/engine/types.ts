@@ -21,9 +21,9 @@ export interface CardDefinition {
 export interface CardInstance {
   instanceId: string;
   definitionId: string;
-  type: CardType;
-  currentHealth?: number; // creatures only
-  hasAttacked?: boolean;  // creatures only
+  currentHealth?: number;
+  hasAttacked?: boolean;
+  type?: CardType;
 }
 
 export interface PlayerState {
