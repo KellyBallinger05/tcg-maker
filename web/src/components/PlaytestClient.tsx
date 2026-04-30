@@ -225,7 +225,9 @@ export default function PlaytestClient({
           onClick={endTurn}
           disabled={state.turnOwner !== "player" || state.isProcessing}
         >
-          End Turn
+          {state.turnOwner === "ai" || state.isProcessing
+            ? "Opponent Thinking..."
+            : "End Turn"}
         </button>
 
         <button className="game-button" onClick={reset}>Reset</button>
