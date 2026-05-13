@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import PlaytestClient from "@/components/PlaytestClient";
+import { validateDeckForPlaytest } from "@/lib/deckValidation";
 
 type CardRow = {
     id: string;
@@ -45,13 +46,13 @@ export default async function PlaytestDeckPage({
         .eq("id", deckId)
         .maybeSingle();
 
-    if (deckError || !deck) {
-        return (
-            <main className="p-6">
-                <p>Deck not found. ID: {deckId}</p>
-                <pre>{JSON.stringify(deckError, null, 2)}</pre>
-            </main>
-        );
+    if (deckError) {
+        console.error(deckError);
+        notFound();
+    }
+
+    if (!deck) {
+        notFound();
     }
 
     const { data: deckCardRows, error: deckCardsError } = await supa
@@ -61,31 +62,85 @@ export default async function PlaytestDeckPage({
 
     if (deckCardsError) {
         console.error(deckCardsError);
-        return <main className="p-6">Failed to load deck cards.</main>;
-    }
 
-    const cardIds = (deckCardRows ?? []).map((row: DeckCardRow) => row.card_id);
-
-    const { data: cardsData, error: cardsError } = await supa
-        .from("cards")
-        .select("id,name,type,cost,attack,defense")
-        .in("id", cardIds);
-
-    if (cardsError) {
         return (
             <main className="p-6">
-                <p>Failed to load card details.</p>
-                <pre>{JSON.stringify(cardsError, null, 2)}</pre>
+                <h1 className="text-2xl font-bold">Failed to load deck cards</h1>
+                <p className="mt-2 text-gray-600">
+                    Something went wrong while loading this deck&apos;s cards.
+                </p>
             </main>
         );
     }
 
-    const cardMap = new Map((cardsData ?? []).map((card: CardRow) => [card.id, card]));
+    const deckRows = deckCardRows ?? [];
+    const cardIds = deckRows.map((row: DeckCardRow) => row.card_id);
 
-    const expandedDeck: PlaytestCard[] = (deckCardRows ?? []).flatMap(
+    let cardsData: CardRow[] = [];
+
+    if (cardIds.length > 0) {
+        const { data, error: cardsError } = await supa
+            .from("cards")
+            .select("id,name,type,cost,attack,defense")
+            .in("id", cardIds);
+
+        if (cardsError) {
+            console.error(cardsError);
+
+            return (
+                <main className="p-6">
+                    <h1 className="text-2xl font-bold">Failed to load card details</h1>
+                    <p className="mt-2 text-gray-600">
+                        Something went wrong while loading the cards in this deck.
+                    </p>
+                </main>
+            );
+        }
+
+        cardsData = data ?? [];
+    }
+
+    const validation = validateDeckForPlaytest({
+        deckCards: deckRows,
+        cards: cardsData,
+        minDeckSize: 1,
+        maxDeckSize: 60,
+    });
+
+    if (!validation.valid) {
+        return (
+            <main className="mx-auto max-w-2xl p-6">
+                <h1 className="text-2xl font-bold">Deck cannot be playtested</h1>
+
+                <p className="mt-2 text-gray-600">
+                    This deck has one or more problems that need to be fixed before a match can start.
+                </p>
+
+                <ul className="mt-4 list-disc space-y-2 pl-6">
+                    {validation.issues.map((issue, index) => (
+                        <li key={`${issue.code}-${index}`}>{issue.message}</li>
+                    ))}
+                </ul>
+
+                <a
+                    href="/studio/decks"
+                    className="mt-6 inline-block rounded-lg border px-4 py-2"
+                >
+                    Back to Decks
+                </a>
+            </main>
+        );
+    }
+
+    const cardMap = new Map(cardsData.map((card: CardRow) => [card.id, card]));
+
+    const expandedDeck: PlaytestCard[] = deckRows.flatMap(
         (row: DeckCardRow, rowIndex: number) => {
             const card = cardMap.get(row.card_id);
-            if (!card) return [];
+
+            if (!card) {
+                return [];
+            }
 
             return Array.from({ length: row.qty }, (_, copyIndex) => ({
                 ...card,
@@ -93,10 +148,6 @@ export default async function PlaytestDeckPage({
             }));
         }
     );
-
-    if (expandedDeck.length === 0) {
-        return <main className="p-6">This deck has no cards and cannot be playtested yet.</main>;
-    }
 
     const shuffledDeck = shuffleDeck(expandedDeck);
 
