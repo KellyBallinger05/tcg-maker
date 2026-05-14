@@ -11,7 +11,7 @@ export default async function CardsByGamePage({
 
     const supa = await createClient();
     const { data: { user } } = await supa.auth.getUser();
-    if (!user) redirect(`/signin?next=/studio/games/${gameId}/cards`);
+    if (!user) redirect(`/auth/signin?next=/studio/games/${gameId}/cards`);
 
     const { data: game } = await supa
         .from("games")
@@ -21,7 +21,7 @@ export default async function CardsByGamePage({
 
     if (!game) {
         return (
-            <main className="mx-auto max-w-3xl p-6">
+            <main className="mx-auto max-w-4xl p-6">
                 <p>Game not found.</p>
                 <Link className="underline" href="/studio/games">
                     Back to My Games
@@ -38,7 +38,7 @@ export default async function CardsByGamePage({
 
     if (error) {
         return (
-            <main className="mx-auto max-w-3xl p-6">
+            <main className="mx-auto max-w-4xl p-6">
                 <h1 className="text-2xl font-semibold">{game.title} — Cards</h1>
                 <p className="mt-4">Error loading cards.</p>
             </main>
@@ -48,7 +48,7 @@ export default async function CardsByGamePage({
     const list = cards ?? [];
 
     return (
-        <main className="mx-auto max-w-3xl p-6">
+        <main className="mx-auto max-w-4xl p-6">
             <div className="flex items-baseline justify-between">
                 <div>
                     <Link className="underline text-sm" href="/studio/games">
@@ -57,7 +57,10 @@ export default async function CardsByGamePage({
                     <h1 className="mt-2 text-2xl font-semibold">{game.title} — Cards</h1>
                 </div>
 
-                <Link className="underline" href={`/studio/cards/new?gameId=${encodeURIComponent(gameId)}`}>
+                <Link
+                    className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition"
+                    href={`/studio/cards/new?gameId=${encodeURIComponent(gameId)}`}
+                >
                     + New Card
                 </Link>
             </div>
@@ -65,7 +68,13 @@ export default async function CardsByGamePage({
             {list.length === 0 ? (
                 <div className="mt-6 rounded border border-gray-300 shadow-sm p-5">
                     <div className="font-medium">No cards yet.</div>
-                    <div className="mt-1 text-sm opacity-80">Create your first card for this game.</div>
+                    <div className="mt-1 text-sm text-gray-500">Create your first card for this game.</div>
+                    <Link
+                        className="mt-4 inline-block rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition"
+                        href={`/studio/cards/new?gameId=${encodeURIComponent(gameId)}`}
+                    >
+                        Create Card
+                    </Link>
                 </div>
             ) : (
                 <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -115,9 +124,19 @@ export default async function CardsByGamePage({
                                                 <span className="text-lg font-bold stat-outline">{c.defense || 0}</span>
                                             </div>
                                         </div>
-                                        <span className="px-2 py-1 rounded text-xs uppercase tracking-wider bg-white/20 text-black">
-                                            {(c.type || "unit").toString()}
-                                        </span>
+                                        {(() => {
+                                            const t = (c.type || "unit").toString().toLowerCase();
+                                            const cls =
+                                                t === "unit"  ? "bg-blue-600" :
+                                                t === "spell" ? "bg-violet-600" :
+                                                t === "item" || t === "equipment" ? "bg-amber-500" :
+                                                "bg-white/30";
+                                            return (
+                                                <span className={`px-2 py-1 rounded text-xs uppercase tracking-wider text-white ${cls}`}>
+                                                    {t}
+                                                </span>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                             </div>

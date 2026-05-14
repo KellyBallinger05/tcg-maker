@@ -71,13 +71,10 @@ export default function Card({ card, detailsHref }: CardProps) {
             {(() => {
               const t = (card.type || 'unit').toString().toLowerCase();
               const badgeClass =
-                t === 'unit'
-                  ? 'bg-green-600 text-white'
-                  : t === 'spell'
-                  ? 'bg-purple-600 text-white'
-                  : t === 'equipment'
-                  ? 'bg-yellow-600 text-black'
-                  : 'bg-white/20 text-black dark:text-white';
+                t === 'unit'    ? 'bg-blue-600 text-white' :
+                t === 'spell'   ? 'bg-violet-600 text-white' :
+                t === 'item' || t === 'equipment' ? 'bg-amber-500 text-white' :
+                'bg-white/30 text-white';
               return (
                 <span className={`px-2 py-1 rounded text-xs uppercase tracking-wider ${badgeClass}`}>
                   {t}

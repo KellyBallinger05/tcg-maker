@@ -76,7 +76,12 @@ export default function SignIn() {
     }
 
     return (
-        <main className="mx-auto max-w-md p-6 space-y-3">
+        <main className="mx-auto max-w-md p-6 space-y-4">
+            <div className="space-y-1">
+                <h1 className="text-2xl font-semibold">Sign in to TCG Maker</h1>
+                <p className="text-sm text-gray-500">Create and playtest your own card games.</p>
+            </div>
+
             <button
                 className="w-full rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
                 disabled={loading !== null}

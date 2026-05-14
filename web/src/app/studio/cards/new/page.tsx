@@ -176,7 +176,7 @@ export default async function NewCardPage({
                     />
                 </div>
 
-                <button className="rounded bg-blue-600 px-4 py-2 text-white">Create</button>
+                <button className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition">Create Card</button>
             </form>
         </main>
     );

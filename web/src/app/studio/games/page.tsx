@@ -24,7 +24,7 @@ export default async function GamesList() {
 
     if (error) {
         return (
-            <main className="mx-auto max-w-2xl p-6">
+            <main className="mx-auto max-w-4xl p-6">
                 <h1 className="text-2xl font-semibold">My Games</h1>
                 <p className="mt-4">Error loading games.</p>
             </main>
@@ -34,7 +34,7 @@ export default async function GamesList() {
     const list = games ?? [];
 
     return (
-        <main className="mx-auto max-w-2xl p-6">
+        <main className="mx-auto max-w-4xl p-6">
             <div className="flex items-baseline justify-between">
                 <h1 className="text-2xl font-semibold">My Games</h1>
                 <Link
@@ -65,8 +65,15 @@ export default async function GamesList() {
                             <div className="flex items-start justify-between gap-3">
                                 <div>
                                     <div className="font-medium">{g.title}</div>
-                                    <div className="mt-1 text-sm opacity-80">
-                                        {g.status} · Created {formatDate(g.created_at)}
+                                    <div className="mt-1 flex items-center gap-2 text-sm">
+                                        <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+                                            g.status === "published"
+                                                ? "bg-green-100 text-green-700"
+                                                : "bg-gray-100 text-gray-500"
+                                        }`}>
+                                            {g.status}
+                                        </span>
+                                        <span className="opacity-60">Created {formatDate(g.created_at)}</span>
                                     </div>
                                 </div>
 
@@ -75,7 +82,7 @@ export default async function GamesList() {
                                         className="rounded border border-gray-300 shadow-sm px-3 py-1 text-sm hover:bg-gray-50 transition"
                                         href={`/studio/games/${g.id}/cards`}
                                     >
-                                        Open
+                                        View Cards
                                     </Link>
                                 </div>
                             </div>
