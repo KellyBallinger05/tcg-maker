@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import SignInLink from "./SignInLink";
+import SignOutLink from "./SignOutLink";
 
 export default async function TopNav() {
     const supa = await createClient();
@@ -41,12 +42,7 @@ export default async function TopNav() {
                     {user ? (
                         <>
                             <span className="hidden sm:inline text-gray-600">{user.email}</span>
-                            <Link
-                                href="/auth/signout"
-                                className="rounded bg-gray-200 px-3 py-1 hover:bg-gray-300"
-                            >
-                                Sign out
-                            </Link>
+                            <SignOutLink className="rounded bg-gray-200 px-3 py-1 hover:bg-gray-300" />
                         </>
                     ) : (
                         <SignInLink className="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700" />
