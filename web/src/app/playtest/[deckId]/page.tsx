@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import PlaytestClient from "@/components/PlaytestClient";
+import { validateDeckForPlaytest } from "@/lib/deckValidation";
 
 type CardRow = {
     id: string;
@@ -45,23 +46,13 @@ export default async function PlaytestDeckPage({
         .eq("id", deckId)
         .maybeSingle();
 
-    if (deckError || !deck) {
-        return (
-            <main className="mx-auto max-w-4xl p-6 space-y-4">
-                <h1 className="text-2xl font-semibold">Deck not found</h1>
-                <div className="rounded border border-gray-300 shadow-sm p-5 space-y-2">
-                    <p className="text-sm text-gray-500">
-                        This deck doesn't exist or you don't have access to it.
-                    </p>
-                    <Link
-                        href="/studio/decks"
-                        className="mt-2 inline-block rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition"
-                    >
-                        Back to My Decks
-                    </Link>
-                </div>
-            </main>
-        );
+    if (deckError) {
+        console.error(deckError);
+        notFound();
+    }
+
+    if (!deck) {
+        notFound();
     }
 
     const { data: deckCardRows, error: deckCardsError } = await supa
@@ -71,57 +62,85 @@ export default async function PlaytestDeckPage({
 
     if (deckCardsError) {
         console.error(deckCardsError);
+
         return (
-            <main className="mx-auto max-w-4xl p-6 space-y-4">
-                <h1 className="text-2xl font-semibold">Something went wrong</h1>
-                <div className="rounded border border-gray-300 shadow-sm p-5 space-y-2">
-                    <p className="text-sm text-gray-500">
-                        We couldn't load the cards for <strong>{deck.name}</strong>. Try again or go back to your decks.
-                    </p>
-                    <Link
-                        href="/studio/decks"
-                        className="mt-2 inline-block rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition"
-                    >
-                        Back to My Decks
-                    </Link>
-                </div>
+            <main className="p-6">
+                <h1 className="text-2xl font-bold">Failed to load deck cards</h1>
+                <p className="mt-2 text-gray-600">
+                    Something went wrong while loading this deck&apos;s cards.
+                </p>
             </main>
         );
     }
 
-    const cardIds = (deckCardRows ?? []).map((row: DeckCardRow) => row.card_id);
+    const deckRows = deckCardRows ?? [];
+    const cardIds = deckRows.map((row: DeckCardRow) => row.card_id);
 
-    const { data: cardsData, error: cardsError } = await supa
-        .from("cards")
-        .select("id,name,type,cost,attack,defense")
-        .in("id", cardIds);
+    let cardsData: CardRow[] = [];
 
-    if (cardsError) {
-        console.error(cardsError);
-        return (
-            <main className="mx-auto max-w-4xl p-6 space-y-4">
-                <h1 className="text-2xl font-semibold">Something went wrong</h1>
-                <div className="rounded border border-gray-300 shadow-sm p-5 space-y-2">
-                    <p className="text-sm text-gray-500">
-                        We couldn't load the card details for <strong>{deck.name}</strong>. Try again or go back to your decks.
+    if (cardIds.length > 0) {
+        const { data, error: cardsError } = await supa
+            .from("cards")
+            .select("id,name,type,cost,attack,defense")
+            .in("id", cardIds);
+
+        if (cardsError) {
+            console.error(cardsError);
+
+            return (
+                <main className="p-6">
+                    <h1 className="text-2xl font-bold">Failed to load card details</h1>
+                    <p className="mt-2 text-gray-600">
+                        Something went wrong while loading the cards in this deck.
                     </p>
-                    <Link
-                        href="/studio/decks"
-                        className="mt-2 inline-block rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition"
-                    >
-                        Back to My Decks
-                    </Link>
-                </div>
+                </main>
+            );
+        }
+
+        cardsData = data ?? [];
+    }
+
+    const validation = validateDeckForPlaytest({
+        deckCards: deckRows,
+        cards: cardsData,
+        minDeckSize: 1,
+        maxDeckSize: 60,
+    });
+
+    if (!validation.valid) {
+        return (
+            <main className="mx-auto max-w-2xl p-6">
+                <h1 className="text-2xl font-bold">Deck cannot be playtested</h1>
+
+                <p className="mt-2 text-gray-600">
+                    This deck has one or more problems that need to be fixed before a match can start.
+                </p>
+
+                <ul className="mt-4 list-disc space-y-2 pl-6">
+                    {validation.issues.map((issue, index) => (
+                        <li key={`${issue.code}-${index}`}>{issue.message}</li>
+                    ))}
+                </ul>
+
+                <a
+                    href="/studio/decks"
+                    className="mt-6 inline-block rounded-lg border px-4 py-2"
+                >
+                    Back to Decks
+                </a>
             </main>
         );
     }
 
-    const cardMap = new Map((cardsData ?? []).map((card: CardRow) => [card.id, card]));
+    const cardMap = new Map(cardsData.map((card: CardRow) => [card.id, card]));
 
-    const expandedDeck: PlaytestCard[] = (deckCardRows ?? []).flatMap(
+    const expandedDeck: PlaytestCard[] = deckRows.flatMap(
         (row: DeckCardRow, rowIndex: number) => {
             const card = cardMap.get(row.card_id);
-            if (!card) return [];
+
+            if (!card) {
+                return [];
+            }
 
             return Array.from({ length: row.qty }, (_, copyIndex) => ({
                 ...card,
@@ -129,26 +148,6 @@ export default async function PlaytestDeckPage({
             }));
         }
     );
-
-    if (expandedDeck.length === 0) {
-        return (
-            <main className="mx-auto max-w-4xl p-6 space-y-4">
-                <h1 className="text-2xl font-semibold">{deck.name}</h1>
-                <div className="rounded border border-gray-300 shadow-sm p-5 space-y-2">
-                    <div className="font-medium">This deck has no cards yet</div>
-                    <p className="text-sm text-gray-500">
-                        Add cards to this deck in the Deck Builder before playtesting.
-                    </p>
-                    <Link
-                        href="/studio/decks"
-                        className="mt-2 inline-block rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition"
-                    >
-                        Go to Deck Builder
-                    </Link>
-                </div>
-            </main>
-        );
-    }
 
     const shuffledDeck = shuffleDeck(expandedDeck);
 

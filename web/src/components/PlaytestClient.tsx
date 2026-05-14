@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 export type PlaytestCard = {
   id: string;
@@ -22,6 +22,9 @@ type GameState = {
   aiBattlefield: PlaytestCard[];
   aiDiscard: PlaytestCard[];
   turn: number;
+  turnOwner: "player" | "ai";
+  phase: "draw" | "main" | "end";
+  isProcessing: boolean;
   log: string[];
 };
 
@@ -127,26 +130,86 @@ export default function PlaytestClient({
       aiBattlefield: [],
       aiDiscard: [],
       turn: 1,
+      turnOwner: "player",
+      phase: "main",
+      isProcessing: false,
       log: [`Game started with "${deckName}". Drew opening hand (${openingHand.length}).`],
     };
   }, [initialDeck, deckName]);
 
   const [state, setState] = useState<GameState>(initial);
 
-  const draw = () => setState((s) => drawCard(s, false));
-  const playFromHand = (instanceId: string) => setState((s) => playCard(s, instanceId, false));
-  const discardFromBattlefield = (instanceId: string) => setState((s) => discardCard(s, instanceId));
+  const draw = () =>
+    setState((s) => {
+      if (s.turnOwner !== "player" || s.phase !== "main") return s;
+      return drawCard(s, false);
+    });
+
+  const playFromHand = (instanceId: string) =>
+    setState((s) => {
+      if (s.turnOwner !== "player" || s.phase !== "main") return s;
+      return playCard(s, instanceId, false);
+    });
+
+  const discardFromBattlefield = (instanceId: string) =>
+    setState((s) => {
+      if (s.turnOwner !== "player" || s.phase !== "main") return s;
+      return discardCard(s, instanceId);
+    });
 
   const endTurn = () => {
     setState((s) => {
-      const afterIncrement: GameState = {
+      if (s.turnOwner !== "player" || s.isProcessing) return s;
+
+      return {
         ...s,
-        turn: s.turn + 1,
-        log: [...s.log, `--- You ended turn ${s.turn}. Opponent is thinking... ---`],
+        turnOwner: "ai",
+        phase: "draw",
+        isProcessing: true,
+        log: [...s.log, `--- You ended turn ${s.turn}. Opponent turn begins ---`],
       };
-      return aiTakeTurn(afterIncrement);
     });
   };
+
+  useEffect(() => {
+    if (state.turnOwner !== "ai" || !state.isProcessing) return;
+
+    // Draw phase
+    const drawTimer = setTimeout(() => {
+      setState((s) => drawCard(s, true));
+    }, 1000);
+
+    // Main phase
+    const mainTimer = setTimeout(() => {
+      setState((s) => {
+        let next = aiTakeTurn(s);
+        return {
+          ...next,
+          phase: "end",
+          log: [...next.log, "Opponent ends their turn."],
+        };
+      });
+    }, 2500);
+
+    // End --> back to player
+    const endTimer = setTimeout(() => {
+      setState((s) => ({
+        ...s,
+        turnOwner: "player",
+        turn: s.turn + 1,
+        phase: "main",
+        isProcessing: false,
+        log: [...s.log, `--- Your turn ${s.turn + 1} ---`],
+      }));
+    }, 4000);
+
+    return () => {
+      clearTimeout(drawTimer);
+      clearTimeout(mainTimer);
+      clearTimeout(endTimer);
+    };
+  }, [state.turnOwner, state.isProcessing]);
+
 
   const reset = () => setState(initial);
 
@@ -156,11 +219,29 @@ export default function PlaytestClient({
 
       <div className="game-controls">
         <button className="game-button" onClick={draw}>Draw</button>
-        <button className="game-button" onClick={endTurn}>End Turn</button>
+
+        <button
+          className="game-button"
+          onClick={endTurn}
+          disabled={state.turnOwner !== "player" || state.isProcessing}
+        >
+          {state.turnOwner === "ai" || state.isProcessing
+            ? "Opponent Thinking..."
+            : "End Turn"}
+        </button>
+
         <button className="game-button" onClick={reset}>Reset</button>
       </div>
 
-      <p><b>Turn:</b> {state.turn}</p>
+      <div style={{ marginBottom: 12 }}>
+        <p><b>Turn:</b> {state.turn}</p>
+        <p><b>Current Turn:</b> {state.turnOwner === "player" ? "You" : "Opponent"}</p>
+        <p><b>Phase:</b> {state.phase}</p>
+
+        {state.isProcessing && (
+          <p style={{ color: "orange" }}>Processing turn...</p>
+        )}
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <Zone title={`Your Deck (${state.deck.length})`}>
