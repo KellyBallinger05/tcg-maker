@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 type CardRow = {
@@ -26,17 +26,7 @@ export default async function CardDetailPage(props: {
     const { data: auth } = await supa.auth.getUser();
 
     if (!auth.user) {
-        return (
-            <div className="mx-auto max-w-2xl p-6">
-                <h1 className="text-xl font-semibold">Card</h1>
-                <p className="mt-2 text-sm text-muted-foreground">
-                    Please sign in to view your cards.
-                </p>
-                <Link className="mt-4 inline-block underline" href="/login">
-                    Sign in
-                </Link>
-            </div>
-        );
+        redirect(`/auth/signin?next=/studio/cards/${id}`);
     }
 
     const { data: card, error } = await supa
@@ -51,20 +41,25 @@ export default async function CardDetailPage(props: {
     if (error || !card) notFound();
 
     return (
-        <div className="mx-auto max-w-2xl p-6 space-y-4">
+        <div className="mx-auto max-w-4xl p-6 space-y-4">
             <div className="flex items-start justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-semibold">{card.name ?? "Untitled card"}</h1>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        Type: {card.type ?? "—"} • Cost: {card.cost ?? "—"}
+                    <p className="mt-1 text-sm text-gray-500">
+                        {card.type ? card.type.charAt(0).toUpperCase() + card.type.slice(1) : "—"} • Cost: {card.cost ?? "—"}
                     </p>
 
                     {sp.updated === "1" && (
-                        <p className="mt-2 text-sm">Card updated successfully.</p>
+                        <p className="mt-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded px-3 py-1.5 inline-block">
+                            Card updated successfully.
+                        </p>
                     )}
                 </div>
 
-                <Link className="underline" href={`/studio/cards/${card.id}/edit`}>
+                <Link
+                    className="rounded border border-gray-300 shadow-sm px-3 py-1.5 text-sm hover:bg-gray-50 transition"
+                    href={`/studio/cards/${card.id}/edit`}
+                >
                     Edit
                 </Link>
             </div>
@@ -77,21 +72,21 @@ export default async function CardDetailPage(props: {
                     className="max-w-md rounded border"
                 />
             ) : (
-                <div className="text-sm text-muted-foreground">No image.</div>
+                <div className="text-sm text-gray-500">No image.</div>
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="rounded border border-gray-300 shadow-sm p-3">
-                    <div className="text-xs text-muted-foreground">Attack</div>
+                    <div className="text-xs text-gray-500">Cost</div>
+                    <div className="text-lg font-semibold">{card.cost ?? "—"}</div>
+                </div>
+                <div className="rounded border border-gray-300 shadow-sm p-3">
+                    <div className="text-xs text-gray-500">Attack</div>
                     <div className="text-lg font-semibold">{card.attack ?? "—"}</div>
                 </div>
                 <div className="rounded border border-gray-300 shadow-sm p-3">
-                    <div className="text-xs text-muted-foreground">Defense</div>
+                    <div className="text-xs text-gray-500">Defense</div>
                     <div className="text-lg font-semibold">{card.defense ?? "—"}</div>
-                </div>
-                <div className="rounded border border-gray-300 shadow-sm p-3">
-                    <div className="text-xs text-muted-foreground">Game</div>
-                    <div className="text-sm font-medium break-all">{card.game_id}</div>
                 </div>
             </div>
 
@@ -102,7 +97,7 @@ export default async function CardDetailPage(props: {
                 </p>
             </div>
 
-            <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-gray-500">
                 Created:{" "}
                 {card.created_at ? new Date(card.created_at).toLocaleString() : "—"}
             </div>
