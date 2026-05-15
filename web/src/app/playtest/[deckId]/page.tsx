@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import PlaytestClient from "@/components/PlaytestClient";
 import { validateDeckForPlaytest } from "@/lib/deckValidation";
+import { notFound } from "next/navigation";
 
 type CardRow = {
     id: string;
