@@ -88,16 +88,15 @@ export default async function DecksPage() {
   const decks = decksData ?? [];
 
   return (
-    <main className="p-6 space-y-8">
+    <main className="mx-auto max-w-4xl p-6 space-y-8">
       <section className="space-y-4">
-        <h1 className="text-2xl font-bold">Decks</h1>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">My Decks</h2>
+        <h1 className="text-2xl font-semibold">My Decks</h1>
 
         {decks.length === 0 ? (
-          <p>No decks yet.</p>
+          <div className="rounded border border-gray-300 shadow-sm p-5">
+            <div className="font-medium">No decks yet.</div>
+            <div className="mt-1 text-sm text-gray-500">Use the Deck Builder below to create your first deck.</div>
+          </div>
         ) : (
           <div className="grid gap-4">
             {decks.map((deck: any) => {
@@ -107,17 +106,16 @@ export default async function DecksPage() {
 
               return (
                 <div key={deck.id} className="rounded border border-gray-300 shadow-sm p-4 space-y-2">
-                  <h3 className="text-lg font-bold">{deck.name}</h3>
-                  <p className="text-sm">Game: {gameTitle ?? "Unknown game"}</p>
+                  <h3 className="text-lg font-semibold">{deck.name}</h3>
+                  <p className="text-sm text-gray-500">{gameTitle ?? "No game linked"}</p>
 
-                  <div className="flex gap-4">
-                    <Link href={`/playtest/${deck.id}`} className="underline">
+                  <div className="flex gap-3 pt-1">
+                    <Link
+                      href={`/playtest/${deck.id}`}
+                      className="rounded border border-gray-300 shadow-sm px-3 py-1 text-sm hover:bg-gray-50 transition"
+                    >
                       Playtest
                     </Link>
-
-                    {/* <Link href={`/decks/${deck.id}`} className="underline">
-                      View Deck
-                    </Link> */}
                   </div>
                 </div>
               );

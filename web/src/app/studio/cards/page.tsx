@@ -9,7 +9,7 @@ export default async function CardsList() {
     
     const { data: { user } } = await supa.auth.getUser();
     if (!user) {
-        return <main className="p-6">Sign in first.</main>;
+        redirect("/auth/signin?next=/studio/cards");
     }
 
     const { data: cards, error } = await supa
@@ -21,7 +21,7 @@ export default async function CardsList() {
     if (error) return <p className="text-red-600">Error: {error.message}</p>;
 
     return (
-        <main className="space-y-4">
+        <main className="mx-auto max-w-4xl p-6 space-y-4">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-semibold">My Cards</h1>
                 <Link
@@ -33,10 +33,16 @@ export default async function CardsList() {
             </div>
 
             {!cards?.length ? (
-                <>
-                    <p>No cards yet.</p>
-                    <Link href="/studio/cards/new" className="underline">Create your first card</Link>
-                </>
+                <div className="rounded border border-gray-300 shadow-sm p-5">
+                    <div className="font-medium">No cards yet.</div>
+                    <div className="mt-1 text-sm text-gray-500">Cards you create will appear here.</div>
+                    <Link
+                        href="/studio/cards/new"
+                        className="mt-4 inline-block rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                    >
+                        Create your first card
+                    </Link>
+                </div>
             ) : (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {cards.map((c) => (

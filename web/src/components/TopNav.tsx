@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import SignInLink from "./SignInLink";
+import NavLinks from "./NavLinks";
 
 export default async function TopNav() {
     const supa = await createClient();
@@ -11,30 +12,11 @@ export default async function TopNav() {
     return (
         <header className="border-b border-gray-300 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
             <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-                <div className="flex items-center gap-3">
-                    <Link href="/" className="font-semibold tracking-tight">
+                <div className="flex items-center gap-4">
+                    <Link href="/" className="font-semibold tracking-tight pb-0.5 border-b-2 border-transparent">
                         TCG Maker
                     </Link>
-
-                    <div className="hidden sm:flex items-center gap-3 text-sm text-gray-700">
-                        <Link href="/portal" className="hover:underline">
-                            Portal
-                        </Link>
-                        <span aria-hidden="true" className="text-gray-300 select-none">|</span>
-                        <Link href="/playtest" className="hover:underline">
-                            Playtest
-                        </Link>
-                        <span aria-hidden="true" className="text-gray-300 select-none">|</span>
-                        <Link href="/studio/games" className="hover:underline">
-                            Games
-                        </Link>
-                        <Link href="/studio/decks" className="hover:underline">
-                            Decks
-                        </Link>
-                        <Link href="/studio/cards" className="hover:underline">
-                            Cards
-                        </Link>
-                    </div>
+                    <NavLinks />
                 </div>
 
                 <div className="flex items-center gap-3 text-sm">
