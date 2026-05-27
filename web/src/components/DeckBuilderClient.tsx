@@ -31,10 +31,16 @@ export default function DeckBuilderClient({
   const [cards, setCards] = useState<Card[]>(initialCards ?? []);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [feedback, setFeedback] = useState<{
+  type: "success" | "error";
+  message: string;
+} | null>(null);
 
   const [cardsCache, setCardsCache] = useState<Record<string, Card[]>>(() =>
     initialGameId ? { [initialGameId]: initialCards ?? [] } : {}
   );
+
+  const selectedCount = Object.keys(selected).length;
 
   useEffect(() => {
     let mounted = true;
@@ -100,98 +106,171 @@ export default function DeckBuilderClient({
     setSelected({});
   }, [gameId]);
 
-  async function handleCreateDeck() {
-    if (!gameId || Object.keys(selected).length === 0 || creating) return;
+  function handleGameChange(nextGameId: string) {
+  if (nextGameId === gameId) return;
 
-    const trimmedName = deckName.trim();
-    if (!trimmedName) {
-      alert("Please enter a deck name.");
+  if (selectedCount > 0) {
+    const confirmed = window.confirm(
+      "Changing games will clear your currently selected cards. Continue?"
+    );
+
+    if (!confirmed) return;
+  }
+
+  setFeedback(null);
+  setGameId(nextGameId);
+}
+
+async function handleCreateDeck() {
+  if (creating) return;
+
+  setFeedback(null);
+
+  if (!gameId) {
+    setFeedback({
+      type: "error",
+      message: "Choose a game before creating a deck.",
+    });
+    return;
+  }
+
+  if (selectedCount === 0) {
+    setFeedback({
+      type: "error",
+      message: "Select at least one card before creating a deck.",
+    });
+    return;
+  }
+
+  const trimmedName = deckName.trim();
+
+  if (!trimmedName) {
+    setFeedback({
+      type: "error",
+      message: "Deck name is required.",
+    });
+    return;
+  }
+
+  setCreating(true);
+  const supa = supabaseBrowser();
+
+  try {
+    const { data: userData, error: userError } = await supa.auth.getUser();
+
+    if (userError || !userData?.user) {
+      console.error("auth error:", userError);
+      setFeedback({
+        type: "error",
+        message: "You must be signed in to create a deck.",
+      });
       return;
     }
 
-    setCreating(true);
-    const supa = supabaseBrowser();
+    const ownerId = userData.user.id;
 
-    try {
-      const { data: userData, error: userError } = await supa.auth.getUser();
-      if (userError || !userData?.user) {
-        console.error("auth error:", userError);
-        alert("You must be signed in to create a deck.");
-        return;
-      }
+    const { data: deckRow, error: deckError } = await supa
+      .from("decks")
+      .insert({
+        name: trimmedName,
+        game_id: gameId,
+        owner_id: ownerId,
+      })
+      .select("id")
+      .single();
 
-      const ownerId = userData.user.id;
-
-      const { data: deckRow, error: deckError } = await supa
-        .from("decks")
-        .insert({
-          name: trimmedName,
-          game_id: gameId,
-          owner_id: ownerId,
-        })
-        .select("id")
-        .single();
-
-      if (deckError || !deckRow) {
-        console.error("deck create error:", deckError);
-        alert("Error creating deck.");
-        return;
-      }
-
-      const deckCardRows = Object.values(selected).map((card) => ({
-        deck_id: deckRow.id,
-        card_id: card.id,
-        qty: 1,
-      }));
-
-      const { error: deckCardsError } = await supa.from("deck_cards").insert(deckCardRows);
-
-      if (deckCardsError) {
-        console.error("deck_cards error:", deckCardsError);
-        alert("Deck was created, but saving selected cards failed.");
-        return;
-      }
-
-      alert("Deck created successfully.");
-      window.location.reload();
-    } finally {
-      setCreating(false);
+    if (deckError || !deckRow) {
+      console.error("deck create error:", deckError);
+      setFeedback({
+        type: "error",
+        message: "Deck could not be created. Please try again.",
+      });
+      return;
     }
+
+    const deckCardRows = Object.values(selected).map((card) => ({
+      deck_id: deckRow.id,
+      card_id: card.id,
+      qty: 1,
+    }));
+
+    const { error: deckCardsError } = await supa
+      .from("deck_cards")
+      .insert(deckCardRows);
+
+    if (deckCardsError) {
+      console.error("deck_cards error:", deckCardsError);
+      setFeedback({
+        type: "error",
+        message:
+          "Deck was created, but the selected cards could not be saved. Please try again.",
+      });
+      return;
+    }
+
+    setFeedback({
+      type: "success",
+      message: "Deck created successfully.",
+    });
+
+    setDeckName("");
+    setSelected({});
+  } catch (error) {
+    console.error("unexpected deck create error:", error);
+    setFeedback({
+      type: "error",
+      message: "Something went wrong while creating the deck. Please try again.",
+    });
+  } finally {
+    setCreating(false);
   }
+}
 
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">{title}</h1>
-        <div>
-          <button
-            className="rounded bg-green-600 px-4 py-2 text-white font-semibold shadow hover:bg-green-700 transition disabled:opacity-50"
-            disabled={Object.keys(selected).length === 0 || creating}
-            onClick={handleCreateDeck}
-            type="button"
-          >
-            {creating ? "Creating..." : `Create Deck (${Object.keys(selected).length})`}
-          </button>
-        </div>
+return (
+  <div>
+    <div className="flex items-center justify-between mb-4">
+      <h1 className="text-2xl font-semibold">{title}</h1>
+      <div>
+        <button
+          className="rounded bg-green-600 px-4 py-2 text-white font-semibold shadow hover:bg-green-700 transition disabled:opacity-50"
+          disabled={creating}
+          onClick={handleCreateDeck}
+          type="button"
+        >
+          {creating ? "Creating..." : `Create Deck (${selectedCount})`}
+        </button>
       </div>
+    </div>
 
-      <div className="mb-4 max-w-md">
-        <label className="block mb-2 font-medium">Deck Name</label>
-        <input
-          type="text"
-          value={deckName}
-          onChange={(e) => setDeckName(e.target.value)}
-          placeholder="Enter deck name"
-          className="w-full rounded border px-3 py-2"
-        />
+    {feedback && (
+      <div
+        className={`mb-4 rounded border px-4 py-3 text-sm ${
+          feedback.type === "success"
+            ? "border-green-300 bg-green-50 text-green-800"
+            : "border-red-300 bg-red-50 text-red-800"
+        }`}
+      >
+        {feedback.message}
       </div>
+    )}
+
+    <div className="mb-4 max-w-md">
+      <label className="block mb-2 font-medium">Deck Name</label>
+      <input
+        type="text"
+        value={deckName}
+        onChange={(e) => setDeckName(e.target.value)}
+        placeholder="Enter deck name"
+        className="w-full rounded border px-3 py-2"
+      />
+    </div>
 
       <div className="flex gap-6">
         <section className="w-3/4">
           <label className="block mb-2 font-medium">Choose game</label>
           <select
             value={gameId ?? ""}
-            onChange={(e) => setGameId(e.target.value)}
+            onChange={(e) => handleGameChange(e.target.value)}
             className="mb-4 rounded border px-3 py-2"
           >
             {games.map((g) => (

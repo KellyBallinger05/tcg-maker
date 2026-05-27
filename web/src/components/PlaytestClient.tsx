@@ -211,7 +211,15 @@ export default function PlaytestClient({
   }, [state.turnOwner, state.isProcessing]);
 
 
-  const reset = () => setState(initial);
+  const reset = () => {
+  const confirmed = window.confirm(
+    "Reset this playtest? Current match progress will be lost."
+  );
+
+  if (!confirmed) return;
+
+  setState(initial);
+};
 
   return (
     <div style={{ padding: 20, maxWidth: 1100, margin: "0 auto" }}>
